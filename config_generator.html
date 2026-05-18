@@ -13,240 +13,487 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             min-height: 100vh;
             padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 40%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 60%, rgba(139, 92, 246, 0.06) 0%, transparent 50%);
+            animation: bgFloat 20s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes bgFloat {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(2%, -2%); }
         }
 
         .container {
             max-width: 800px;
             margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
             overflow: hidden;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5), 0 0 120px rgba(99, 102, 241, 0.1);
+            animation: containerIn 0.8s ease-out;
+        }
+
+        @keyframes containerIn {
+            from { opacity: 0; transform: translateY(30px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
             color: white;
-            padding: 30px;
+            padding: 40px 35px;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            background: linear-gradient(to top, rgba(26, 26, 46, 0.3), transparent);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.05); opacity: 0.8; }
         }
 
         .header h1 {
             font-size: 28px;
             margin-bottom: 10px;
+            position: relative;
+            letter-spacing: -0.5px;
         }
 
         .header p {
             opacity: 0.9;
+            font-size: 15px;
+            position: relative;
+            line-height: 1.5;
+        }
+
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
             font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.3s;
+            z-index: 1;
+        }
+
+        .back-link:hover {
+            color: white;
+            transform: translateX(-3px);
         }
 
         .content {
-            padding: 30px;
+            padding: 30px 35px;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .notice {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            color: #a78bfa;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: noticeIn 0.5s ease-out;
+        }
+
+        @keyframes noticeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .account-card {
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 24px;
             margin-bottom: 20px;
             position: relative;
-            background: #f9f9f9;
+            background: rgba(255, 255, 255, 0.04);
+            transition: all 0.3s ease;
+            animation: cardIn 0.4s ease-out backwards;
+        }
+
+        .account-card:hover {
+            border-color: rgba(99, 102, 241, 0.2);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .account-card h3 {
-            color: #667eea;
-            margin-bottom: 15px;
+            color: #a78bfa;
+            margin-bottom: 20px;
             font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .account-card h3::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 18px;
+            background: #6366f1;
+            border-radius: 2px;
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 18px;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 5px;
-            color: #333;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.75);
             font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-group label .required {
+            color: #f56565;
+            font-size: 12px;
         }
 
         .form-group input {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
+            padding: 12px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
             font-size: 14px;
-            transition: border-color 0.3s;
+            transition: all 0.3s;
+            background: rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.9);
+            outline: none;
+        }
+
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
         }
 
         .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
+            border-color: #6366f1;
+            background: rgba(99, 102, 241, 0.08);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
         }
 
         .form-group small {
-            color: #666;
+            color: rgba(255, 255, 255, 0.45);
             font-size: 12px;
+            margin-top: 6px;
+            display: block;
+            line-height: 1.5;
         }
 
         .btn {
-            padding: 10px 20px;
+            padding: 12px 24px;
             border: none;
-            border-radius: 6px;
+            border-radius: 12px;
             cursor: pointer;
             font-size: 14px;
             font-weight: 500;
-            transition: all 0.3s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            position: relative;
+            overflow: hidden;
         }
 
         .btn-primary {
-            background: #667eea;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             color: white;
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
         }
 
         .btn-primary:hover {
-            background: #5568d3;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.4);
         }
 
         .btn-success {
-            background: #48bb78;
+            background: linear-gradient(135deg, #059669 0%, #34d399 100%);
             color: white;
+            box-shadow: 0 4px 16px rgba(5, 150, 105, 0.3);
         }
 
         .btn-success:hover {
-            background: #38a169;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(5, 150, 105, 0.4);
         }
 
         .btn-danger {
-            background: #f56565;
-            color: white;
+            background: rgba(245, 101, 101, 0.15);
+            border: 1px solid rgba(245, 101, 101, 0.3);
+            color: #f56565;
+            font-size: 13px;
+            padding: 8px 16px;
         }
 
         .btn-danger:hover {
-            background: #e53e3e;
+            background: rgba(245, 101, 101, 0.25);
+            border-color: rgba(245, 101, 101, 0.5);
+            transform: translateY(-1px);
         }
 
         .btn-secondary {
-            background: #718096;
-            color: white;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.75);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 13px;
+            border-radius: 8px;
         }
 
         .btn-group {
             display: flex;
-            gap: 10px;
-            margin-top: 20px;
+            gap: 12px;
+            margin-top: 24px;
+            flex-wrap: wrap;
         }
 
         .remove-btn {
             position: absolute;
-            top: 15px;
-            right: 15px;
+            top: 20px;
+            right: 20px;
         }
 
         .result-section {
-            margin-top: 30px;
-            padding: 20px;
-            background: #f7fafc;
-            border-radius: 8px;
-            border: 2px solid #e0e0e0;
+            margin-top: 32px;
+            padding: 24px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            animation: resultIn 0.5s ease-out;
+        }
+
+        @keyframes resultIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .result-section h3 {
-            color: #2d3748;
-            margin-bottom: 15px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 18px;
+            font-size: 18px;
+            font-weight: 600;
         }
 
         .code-block {
-            background: #2d3748;
-            color: #48bb78;
-            padding: 15px;
-            border-radius: 6px;
+            background: rgba(30, 30, 50, 0.8);
+            color: #34d399;
+            padding: 18px;
+            border-radius: 12px;
             font-family: 'Courier New', monospace;
             font-size: 13px;
             overflow-x: auto;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .code-block pre {
+            white-space: pre-wrap;
+            word-break: break-all;
         }
 
         .copy-btn {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            padding: 5px 10px;
+            top: 12px;
+            right: 12px;
+            padding: 6px 14px;
             font-size: 12px;
+            border-radius: 8px;
+            z-index: 1;
         }
 
         .tabs {
             display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
+            gap: 8px;
+            margin-bottom: 18px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 4px;
+            border-radius: 12px;
         }
 
         .tab {
             padding: 10px 20px;
             border: none;
-            background: #e0e0e0;
-            border-radius: 6px 6px 0 0;
+            background: transparent;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: 500;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            color: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.06);
         }
 
         .tab.active {
-            background: #667eea;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
             color: white;
+            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
         }
 
         .tab-content {
             display: none;
+            animation: tabIn 0.3s ease-out;
         }
 
         .tab-content.active {
             display: block;
         }
 
+        @keyframes tabIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
         .tips {
-            background: #fef3c7;
-            border-left: 4px solid #f59e0b;
-            padding: 15px;
-            margin-top: 20px;
-            border-radius: 4px;
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-left: 3px solid #f59e0b;
+            padding: 18px 20px;
+            margin-top: 24px;
+            border-radius: 12px;
         }
 
         .tips h4 {
-            color: #92400e;
-            margin-bottom: 10px;
+            color: #fbbf24;
+            margin-bottom: 12px;
+            font-size: 15px;
+            font-weight: 600;
         }
 
         .tips ul {
             margin-left: 20px;
-            color: #78350f;
+            color: rgba(255, 255, 255, 0.65);
         }
 
         .tips li {
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            line-height: 1.6;
+            font-size: 13px;
+        }
+
+        .tips code {
+            background: rgba(99, 102, 241, 0.15);
+            color: #a78bfa;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px 35px;
+            background: rgba(255, 255, 255, 0.02);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 13px;
+        }
+
+        .footer a {
+            color: #a78bfa;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer a:hover {
+            color: #c4b5fd;
         }
 
         @media (max-width: 768px) {
+            body { padding: 12px; }
+
             .container {
                 margin: 0;
-                border-radius: 0;
+                border-radius: 16px;
             }
 
-            .content {
-                padding: 20px;
-            }
+            .content { padding: 20px; }
+
+            .header { padding: 30px 20px; }
+
+            .header h1 { font-size: 24px; }
+
+            .btn-group { flex-direction: column; }
+
+            .btn-group .btn { width: 100%; justify-content: center; }
+
+            .account-card { padding: 18px; }
+
+            .back-link { display: none; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
+            <a href="index.html" class="back-link">← 返回首页</a>
             <h1>🚀 NewAPI 配置生成器</h1>
             <p>轻松生成多账号签到配置，无需手动编写 JSON</p>
         </div>
@@ -259,13 +506,13 @@
                 <button class="btn btn-success" onclick="generateConfig()">✨ 生成配置</button>
             </div>
 
-            <div class="btn-group" style="margin-top: 10px;">
+            <div class="btn-group" style="margin-top: 12px;">
                 <button class="btn btn-secondary" onclick="saveToLocal()">💾 保存到本地</button>
                 <button class="btn btn-secondary" onclick="loadFromLocal()">📂 从本地加载</button>
-                <button class="btn btn-danger" onclick="clearLocal()">🗑️ 清除本地数据</button>
+                <button class="btn btn-secondary" onclick="clearLocal()" style="color: #f56565; border-color: rgba(245,101,101,0.3);">🗑️ 清除本地数据</button>
             </div>
 
-            <div class="tips" style="margin-top: 20px; background: #fff3cd; border-left-color: #ffc107;">
+            <div class="tips" style="margin-top: 24px;">
                 <h4>💡 关于本地存储：</h4>
                 <ul>
                     <li><strong>保存到本地：</strong>将配置保存到浏览器本地存储，下次访问自动加载</li>
@@ -307,12 +554,15 @@
                 </div>
             </div>
         </div>
+
+        <div class="footer">
+            <p>Made with ❤️ by <a href="https://github.com/Jasonliu-0/Newapi-checkin" target="_blank">Jasonliu-0</a></p>
+        </div>
     </div>
 
     <script>
         let accountCount = 0;
 
-        // 页面加载时添加第一个账号
         window.onload = function() {
             addAccount();
         };
@@ -326,23 +576,23 @@
             accountCard.id = `account-${accountCount}`;
             accountCard.innerHTML = `
                 <h3>账号 ${accountCount}</h3>
-                ${accountCount > 1 ? `<button class="btn btn-danger btn-sm remove-btn" onclick="removeAccount(${accountCount})">删除</button>` : ''}
+                ${accountCount > 1 ? `<button class="btn btn-danger remove-btn" onclick="removeAccount(${accountCount})">删除</button>` : ''}
 
                 <div class="form-group">
-                    <label>站点 URL *</label>
-                    <input type="text" id="url-${accountCount}" placeholder="https://api.example.com" required>
+                    <label>站点 URL <span class="required">*</span></label>
+                    <input type="text" id="url-${accountCount}" placeholder="https://api.example.com">
                     <small>完整的站点地址，如 https://api.example.com</small>
                 </div>
 
                 <div class="form-group">
-                    <label>Session Cookie *</label>
-                    <input type="text" id="session-${accountCount}" placeholder="MTc2NzQxMzYzM3xEWDhFQVFMX2..." required>
+                    <label>Session Cookie <span class="required">*</span></label>
+                    <input type="text" id="session-${accountCount}" placeholder="MTc2NzQxMzYzM3xEWDhFQVFMX2...">
                     <small>从浏览器开发者工具中获取的 session 值</small>
                 </div>
 
                 <div class="form-group">
-                    <label>用户ID *</label>
-                    <input type="text" id="userid-${accountCount}" placeholder="123" required>
+                    <label>用户ID <span class="required">*</span></label>
+                    <input type="text" id="userid-${accountCount}" placeholder="123">
                     <small>你的用户ID，通常是用户名中的数字（如 user_123 的ID是 123）<br>⚠️ 必填字段，缺少会导致签到失败</small>
                 </div>
 
@@ -365,12 +615,14 @@
         function removeAccount(id) {
             const account = document.getElementById(`account-${id}`);
             if (account) {
-                account.remove();
+                account.style.transition = 'all 0.3s ease';
+                account.style.opacity = '0';
+                account.style.transform = 'translateY(-10px)';
+                setTimeout(() => account.remove(), 300);
             }
         }
 
         function switchTab(tab) {
-            // 切换标签页样式
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
@@ -409,7 +661,6 @@
                     name: name || `站点${id}`
                 };
 
-                // 如果提供了 cf_clearance，添加到配置中
                 if (cfClearance) {
                     account.cf_clearance = cfClearance;
                 }
@@ -421,15 +672,12 @@
                 return;
             }
 
-            // 生成 JSON 格式
             const jsonConfig = JSON.stringify(accounts, null, 2);
             document.getElementById('json-output').textContent = jsonConfig;
 
-            // 生成简单格式
             const simpleConfig = accounts.map(acc => `${acc.url}#${acc.session}`).join(',');
             document.getElementById('simple-output').textContent = simpleConfig;
 
-            // 显示结果
             document.getElementById('result').style.display = 'block';
             document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
         }
@@ -442,27 +690,27 @@
             const btn = event.target;
             const originalText = btn.textContent;
 
-            // 尝试现代 API
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(text).then(() => {
                     btn.textContent = '✅ 已复制！';
-                    btn.style.background = '#48bb78';
+                    btn.style.background = 'rgba(5, 150, 105, 0.3)';
+                    btn.style.borderColor = 'rgba(52, 211, 153, 0.5)';
+                    btn.style.color = '#34d399';
 
                     setTimeout(() => {
                         btn.textContent = originalText;
                         btn.style.background = '';
+                        btn.style.borderColor = '';
+                        btn.style.color = '';
                     }, 2000);
                 }).catch(err => {
-                    // 失败时使用备用方案
                     fallbackCopy(text, btn, originalText);
                 });
             } else {
-                // 浏览器不支持现代 API,使用备用方案
                 fallbackCopy(text, btn, originalText);
             }
         }
 
-        // 备用复制方案
         function fallbackCopy(text, btn, originalText) {
             const textarea = document.createElement('textarea');
             textarea.value = text;
@@ -473,25 +721,26 @@
 
             try {
                 textarea.select();
-                textarea.setSelectionRange(0, 99999); // 移动端兼容
+                textarea.setSelectionRange(0, 99999);
 
                 const successful = document.execCommand('copy');
                 document.body.removeChild(textarea);
 
                 if (successful) {
                     btn.textContent = '✅ 已复制！';
-                    btn.style.background = '#48bb78';
+                    btn.style.background = 'rgba(5, 150, 105, 0.3)';
+                    btn.style.color = '#34d399';
 
                     setTimeout(() => {
                         btn.textContent = originalText;
                         btn.style.background = '';
+                        btn.style.color = '';
                     }, 2000);
                 } else {
                     throw new Error('execCommand failed');
                 }
             } catch (err) {
                 document.body.removeChild(textarea);
-                // 自动选中文本,提示用户手动复制
                 const outputElement = document.getElementById(
                     btn.closest('.tab-content').querySelector('pre').id
                 );
@@ -502,21 +751,20 @@
                 selection.addRange(range);
 
                 btn.textContent = '⚠️ 请手动复制';
-                btn.style.background = '#f59e0b';
+                btn.style.background = 'rgba(245, 158, 11, 0.3)';
+                btn.style.color = '#fbbf24';
                 alert('自动复制失败，已为您选中文本，请按 Ctrl+C (Mac: Cmd+C) 手动复制');
 
                 setTimeout(() => {
                     btn.textContent = originalText;
                     btn.style.background = '';
+                    btn.style.color = '';
                 }, 3000);
             }
         }
 
-        // ========== 本地存储功能 ==========
-
         const STORAGE_KEY = 'newapi_checkin_accounts';
 
-        // 页面加载时自动检查本地存储
         window.addEventListener('load', function() {
             checkLocalStorage();
         });
@@ -525,10 +773,10 @@
             const savedData = localStorage.getItem(STORAGE_KEY);
             if (savedData) {
                 const notice = document.createElement('div');
-                notice.style.cssText = 'background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 15px; border-radius: 6px; margin-bottom: 20px;';
+                notice.className = 'notice';
                 notice.innerHTML = `
-                    <strong>💡 发现本地保存的配置</strong><br>
-                    检测到您之前保存的配置，点击"从本地加载"按钮可恢复。
+                    <span>💡</span>
+                    <span>发现本地保存的配置，点击"从本地加载"按钮可恢复。</span>
                 `;
                 const container = document.querySelector('.content');
                 container.insertBefore(notice, container.firstChild);
@@ -581,11 +829,9 @@
                     return;
                 }
 
-                // 清空现有账号
                 document.getElementById('accounts-container').innerHTML = '';
                 accountCount = 0;
 
-                // 加载保存的账号
                 accounts.forEach((account, index) => {
                     addAccount();
                     const id = accountCount;
