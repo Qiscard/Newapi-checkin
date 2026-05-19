@@ -363,5 +363,41 @@
             <p>Made with ❤️ by <a href="https://github.com/Jasonliu-0/Newapi-checkin" target="_blank">Jasonliu-0</a></p>
         </div>
     </div>
+<script>
+        // ===== 3D Card Tilt Effect =====
+        const tiltCards = document.querySelectorAll('.feature');
+        const tiltBtns = document.querySelectorAll('.btn');
+
+        tiltCards.forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                const rotateX = (y - centerY) / 20;
+                const rotateY = (centerX - x) / 20;
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-2px) scale(1.02)`;
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = '';
+            });
+        });
+
+        // ===== Magnetic Button Hover =====
+        tiltBtns.forEach(btn => {
+            btn.addEventListener('mousemove', (e) => {
+                const rect = btn.getBoundingClientRect();
+                const x = e.clientX - rect.left - rect.width / 2;
+                const y = e.clientY - rect.top - rect.height / 2;
+                btn.style.transform = `translate(${x / 8}px, ${y / 8 - 3}px)`;
+                btn.style.boxShadow = `0 ${10 + y / 4}px ${40 + Math.abs(x) / 2}px rgba(99, 102, 241, 0.45)`;
+            });
+            btn.addEventListener('mouseleave', () => {
+                btn.style.transform = '';
+                btn.style.boxShadow = '';
+            });
+        });
+    </script>
 </body>
 </html>
