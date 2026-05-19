@@ -260,10 +260,10 @@ class NewAPICheckin:
 
     def _cf_bypass_checkin(self) -> dict:
         """
-        CF 绕过签到流程（借鉴 Chrome 扩展的双模式执行思路）
+        CF 绕过签到流程
 
-        1. Playwright 过 CF → 提取 cookie → requests 重试签到
-        2. 仍然失败 → Playwright 浏览器内直接签到
+        在同一个 Playwright 会话中完成 CF 绕过 + 签到，
+        不拆分 cookie 提取和 requests 重试（因为 cf_clearance 绑定浏览器指纹）
         """
         result = {
             'success': False,
@@ -283,104 +283,31 @@ class NewAPICheckin:
             return result
 
         print('[CF] 开始 Playwright 绕过流程...')
-        auth_info = bypasser.bypass_and_get_cookies()
+        browser_result = bypasser.bypass_and_checkin()
 
-        if not auth_info:
-            print('[CF] Cookie 提取失败，尝试浏览器内直接签到...')
-            browser_result = bypasser.execute_checkin_in_browser()
-            if browser_result:
-                return self._format_browser_result(browser_result)
-            result['message'] = 'Cloudflare 绕过失败: 无法获取认证信息'
+        if not browser_result:
+            result['message'] = 'Cloudflare 绕过失败: 无法通过 CF 验证'
             return result
-
-        if 'session' in auth_info and auth_info['session'] != self.session_cookie:
-            self.session.cookies.set('session', auth_info['session'])
-            print('[CF] 已更新 session cookie')
-
-        if 'cf_clearance' in auth_info:
-            self.session.cookies.set('cf_clearance', auth_info['cf_clearance'])
-            print('[CF] 已设置 cf_clearance cookie')
-
-        if 'user_id' in auth_info and not self.user_id:
-            self.user_id = auth_info['user_id']
-            self.session.headers.update({'new-api-user': str(self.user_id)})
 
         self.cf_bypassed = True
 
-        print('[CF] 使用新 cookie 重试签到...')
-        try:
-            resp = self.session.post(f'{self.base_url}/api/user/checkin', timeout=30)
-
-            if resp.status_code == 401:
-                print('[CF] 新 cookie 仍认证失败，尝试浏览器内直接签到...')
-                browser_result = bypasser.execute_checkin_in_browser()
-                if browser_result:
-                    return self._format_browser_result(browser_result)
-                result['message'] = 'Cloudflare 绕过后仍认证失败'
-                return result
-
-            try:
-                data = resp.json()
-            except json.JSONDecodeError:
-                print('[CF] requests 仍被 CF 拦截，尝试浏览器内直接签到...')
-                browser_result = bypasser.execute_checkin_in_browser()
-                if browser_result:
-                    return self._format_browser_result(browser_result)
-                content_preview = resp.text[:200] if resp.text else '(空响应)'
-                result['message'] = f'Cloudflare 绕过后仍返回非JSON (HTTP {resp.status_code}): {content_preview}'
-                return result
-
-            if resp.status_code == 200:
-                if data.get('success'):
-                    result['success'] = True
-                    result['message'] = data.get('message', '签到成功 (CF绕过)')
-                    checkin_data = data.get('data', {})
-                    result['checkin_date'] = checkin_data.get('checkin_date')
-                    result['quota_awarded'] = checkin_data.get('quota_awarded')
-                else:
-                    result['message'] = data.get('message', '签到失败')
-            else:
-                print('[CF] requests 签到失败，尝试浏览器内直接签到...')
-                browser_result = bypasser.execute_checkin_in_browser()
-                if browser_result:
-                    return self._format_browser_result(browser_result)
-                result['message'] = f'HTTP {resp.status_code}: {data.get("message", "未知错误")}'
-
-        except requests.exceptions.RequestException as e:
-            print('[CF] requests 失败，尝试浏览器内直接签到...')
-            browser_result = bypasser.execute_checkin_in_browser()
-            if browser_result:
-                return self._format_browser_result(browser_result)
-            result['message'] = f'Cloudflare 绕过后请求失败: {e}'
-
-        return result
-
-    def _format_browser_result(self, browser_result: dict) -> dict:
-        """将浏览器内签到结果格式化为标准结果格式"""
-        result = {
-            'success': False,
-            'message': '',
-            'checkin_date': None,
-            'quota_awarded': None
-        }
-
         if browser_result.get('error'):
-            result['message'] = f'浏览器内签到失败: {browser_result["error"]}'
+            result['message'] = f'CF 绕过后签到失败: {browser_result["error"]}'
             return result
 
         if browser_result.get('alreadyCheckedIn'):
             result['success'] = True
-            result['message'] = browser_result.get('message', '今日已签到 (浏览器CF绕过)')
+            result['message'] = browser_result.get('message', '今日已签到 (CF绕过)')
         elif browser_result.get('success'):
             result['success'] = True
-            result['message'] = browser_result.get('message', '签到成功 (浏览器CF绕过)')
+            result['message'] = browser_result.get('message', '签到成功 (CF绕过)')
             data = browser_result.get('data', {})
             if isinstance(data, dict):
                 checkin_data = data.get('data', data)
                 result['checkin_date'] = checkin_data.get('checkin_date')
                 result['quota_awarded'] = checkin_data.get('quota_awarded')
         else:
-            result['message'] = browser_result.get('message', '浏览器内签到失败')
+            result['message'] = browser_result.get('message', 'CF 绕过后签到失败')
 
         return result
 
