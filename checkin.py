@@ -63,11 +63,14 @@ class NewAPICheckin:
         """
         return '****'
 
-    def __init__(self, base_url: str, session_cookie: str, user_id: str = None, cf_clearance: str = None):
+    def __init__(self, base_url: str, session_cookie: str, user_id: str = None, cf_clearance: str = None,
+                 login_username: str = None, login_password: str = None):
         self.base_url = base_url.rstrip('/')
         self.session_cookie = session_cookie
         self.original_cf_clearance = cf_clearance
         self.cf_bypassed = False
+        self.login_username = login_username
+        self.login_password = login_password
         self.session = requests.Session()
         self.session.cookies.set('session', session_cookie)
 
@@ -124,6 +127,65 @@ class NewAPICheckin:
 
         return None
 
+    def _try_login(self) -> bool:
+        """
+        尝试使用配置的账号密码重新登录，获取新的 session
+
+        登录接口：POST /api/user/login
+        请求体：{"username": x, "password": x}
+        成功时 cookie 中包含新的 session_id
+
+        Returns:
+            True 如果登录成功，False 否则
+        """
+        if not self.login_username or not self.login_password:
+            return False
+
+        print(f'  [登录] 尝试重新登录...')
+        try:
+            resp = self.session.post(
+                f'{self.base_url}/api/user/login',
+                json={'username': self.login_username, 'password': self.login_password},
+                timeout=30
+            )
+
+            data = resp.json()
+            if resp.status_code == 200 and data.get('success'):
+                # 从响应 cookie 中获取新的 session_id
+                new_session = None
+                for cookie in resp.cookies:
+                    if cookie.name == 'session' or cookie.name == 'session_id':
+                        new_session = cookie.value
+                        break
+
+                if new_session:
+                    self.session_cookie = new_session
+                    self.session.cookies.set('session', new_session)
+                    print(f'  [登录] 登录成功，已更新 session')
+                    return True
+                else:
+                    # 可能 session cookie 在 set-cookie 头中
+                    set_cookie = resp.headers.get('Set-Cookie', '')
+                    import re
+                    match = re.search(r'(?:session|session_id)=([^;]+)', set_cookie)
+                    if match:
+                        new_session = match.group(1)
+                        self.session_cookie = new_session
+                        self.session.cookies.set('session', new_session)
+                        print(f'  [登录] 登录成功，已更新 session')
+                        return True
+
+                    print(f'  [登录] 登录成功但未获取到新的 session cookie')
+                    return False
+            else:
+                msg = data.get('message', '未知错误')
+                print(f'  [登录] 登录失败: {msg}')
+                return False
+
+        except Exception as e:
+            print(f'  [登录] 登录请求异常: {e}')
+            return False
+
     def get_user_info(self, verbose: bool = False) -> Optional[dict]:
         """
         获取用户信息
@@ -145,7 +207,32 @@ class NewAPICheckin:
                 print(f'[错误] 认证失败 (401): Session 可能已过期')
                 if verbose:
                     print(f'  [调试] 完整响应: {resp.text[:500]}')
-                return None
+
+                # 尝试自动登录
+                if self._try_login():
+                    print(f'  [登录] 重试获取用户信息...')
+                    resp = self.session.get(f'{self.base_url}/api/user/self', timeout=30)
+                    if resp.status_code == 200:
+                        try:
+                            data = resp.json()
+                            if data.get('success'):
+                                user_data = data.get('data')
+                                if user_data and 'id' in user_data:
+                                    self.user_id = user_data['id']
+                                    self.session.headers.update({
+                                        'new-api-user': str(self.user_id)
+                                    })
+                                return user_data
+                        except Exception:
+                            pass
+                    print(f'  [登录] 重试后仍无法获取用户信息')
+                    return None
+                else:
+                    if self.login_username and self.login_password:
+                        print('  [登录] 尝试登录不成功')
+                    else:
+                        print('  [登录] 未配置账号密码，无法自动重新登录')
+                    return None
 
             # 尝试解析 JSON
             try:
@@ -222,7 +309,28 @@ class NewAPICheckin:
 
             if resp.status_code == 401:
                 result['message'] = '认证失败: Session 可能已过期，请重新获取'
-                return result
+                # 尝试自动登录
+                if self._try_login():
+                    print(f'  [登录] 重试签到...')
+                    resp = self.session.post(f'{self.base_url}/api/user/checkin', timeout=30)
+                    if resp.status_code == 200:
+                        try:
+                            data = resp.json()
+                            if data.get('success'):
+                                result['success'] = True
+                                result['message'] = data.get('message', '签到成功')
+                                checkin_data = data.get('data', {})
+                                result['checkin_date'] = checkin_data.get('checkin_date')
+                                result['quota_awarded'] = checkin_data.get('quota_awarded')
+                                return result
+                        except Exception:
+                            pass
+                    result['message'] = '重新登录后签到失败'
+                    return result
+                else:
+                    if self.login_username and self.login_password:
+                        result['message'] = '尝试登录不成功'
+                    return result
 
             try:
                 data = resp.json()
@@ -374,6 +482,11 @@ def parse_accounts(accounts_str: str) -> list:
                     # 如果提供了 cf_clearance，添加到账号信息中
                     if 'cf_clearance' in item:
                         account['cf_clearance'] = item['cf_clearance']
+                    # 如果提供了登录账号密码，添加到账号信息中
+                    if 'login_username' in item:
+                        account['login_username'] = item['login_username']
+                    if 'login_password' in item:
+                        account['login_password'] = item['login_password']
                     accounts.append(account)
             return accounts
     except json.JSONDecodeError:
@@ -567,6 +680,8 @@ def main():
         session_cookie = account['session']
         user_id = account.get('user_id')  # 获取用户ID（如果提供）
         cf_clearance = account.get('cf_clearance')  # 获取 CF clearance（如果提供）
+        login_username = account.get('login_username')
+        login_password = account.get('login_password')
         name = account.get('name') or f'账号{i}'
 
         print(f'[{i}/{len(accounts)}] {name}')
@@ -574,7 +689,7 @@ def main():
         if user_id:
             print(f'  用户ID: {NewAPICheckin._mask_user_id(user_id)}')
 
-        client = NewAPICheckin(url, session_cookie, user_id, cf_clearance)
+        client = NewAPICheckin(url, session_cookie, user_id, cf_clearance, login_username, login_password)
 
         # 获取用户信息
         user_info = client.get_user_info()
