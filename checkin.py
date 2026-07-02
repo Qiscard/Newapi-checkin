@@ -8,7 +8,6 @@ NewAPI 自动签到脚本
 import os
 import sys
 import json
-import base64
 import requests
 from datetime import datetime
 from typing import Optional
@@ -85,47 +84,9 @@ class NewAPICheckin:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         })
 
+        self.user_id = user_id
         if user_id:
-            self.user_id = user_id
             self.session.headers.update({'new-api-user': str(user_id)})
-        else:
-            self.user_id = self._extract_user_id_from_session(session_cookie)
-            if self.user_id:
-                self.session.headers.update({'new-api-user': str(self.user_id)})
-
-    def _extract_user_id_from_session(self, session_cookie: str) -> Optional[str]:
-        """
-        从 Session Cookie 中提取用户ID
-
-        Session Cookie 格式通常是 Base64 编码的数据
-        """
-        try:
-            # 尝试解码 Session Cookie
-            # Session 格式类似：MTc2NzQxMzYzM3xE...
-            # 解码后可能包含用户信息
-            decoded = base64.b64decode(session_cookie + '==')  # 添加 padding
-            decoded_str = decoded.decode('utf-8', errors='ignore')
-
-            # 查找可能的用户ID模式
-            # 例如：linuxdo_988 中的 988
-            import re
-            # 查找 "linuxdo_数字" 或 "id"=数字 等模式
-            patterns = [
-                r'linuxdo[_-](\d+)',  # linuxdo_988
-                r'"id"[:\s]+(\d+)',    # "id": 988
-                r'user[_-](\d+)',      # user_988
-                r'userid[:\s]+(\d+)',  # userid: 988
-            ]
-
-            for pattern in patterns:
-                match = re.search(pattern, decoded_str, re.IGNORECASE)
-                if match:
-                    return match.group(1)
-
-        except Exception:
-            pass
-
-        return None
 
     def _try_login(self) -> bool:
         """

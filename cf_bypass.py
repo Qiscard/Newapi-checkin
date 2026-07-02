@@ -5,8 +5,8 @@ Cloudflare 绕过模块
 
 借鉴 newapi-auto-checkin Chrome 扩展的思路：
 - 检测 CF 拦截（403 + HTML 验证页面)
-- 使用 Playwright 无头浏览器自动过 CF 阴护
-- 在同一浏览器会话中完成 CF 绌过 + 磀到签到（不拆分为两步)
+- 使用 Playwright 无头浏览器自动过 CF 防护
+- 在同一浏览器会话中完成 CF 绕过 + 直接签到（不拆分为两步)
 
 两种模式映射:
   Chrome 扩展: service worker fetch → CF 拦截 → 标签页 executeScript
@@ -73,12 +73,12 @@ class CloudflareBypasser:
 
     def _solve_cf_challenge(self, page, max_attempts: int = 5, wait_seconds: int = 8) -> bool:
         """
-        磻解 CF 验证挑战
+        解决 CF 验证挑战
         """
         for attempt in range(max_attempts):
             title = page.title()
             current_url = page.url
-            print(f'[CF 绕过] 检查 CF 猡证状态 (尝试 {attempt + 1}/{max_attempts}): Title="{title[:50]}"')
+            print(f'[CF 绕过] 检查 CF 验证状态 (尝试 {attempt + 1}/{max_attempts}): Title="{title[:50]}"')
 
             is_cf_challenge = (
                 'Just a moment' in title or
@@ -114,7 +114,7 @@ class CloudflareBypasser:
 
     def bypass_and_checkin(self, timeout: int = 90) -> Optional[dict]:
         """
-        在同一个 Playwright 会话中完成 CF 绕过 + 笾到签到
+        在同一个 Playwright 会话中完成 CF 绕过 + 签到
 
         流程 (对应 Chrome 扩展 background.js:115-248):
         1. 启动 Playwright 无头浏览器 (stealth 模式)
@@ -216,7 +216,7 @@ class CloudflareBypasser:
                     }
                 }''')
 
-                print(f'[CF 绕过] 磾到结果: {checkin_result.get("message", checkin_result.get("error", "unknown"))}')
+                print(f'[CF 绕过] 签到结果: {checkin_result.get("message", checkin_result.get("error", "unknown"))}')
 
                 browser.close()
                 return checkin_result
