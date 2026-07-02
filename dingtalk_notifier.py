@@ -19,6 +19,8 @@ try:
 except ImportError:
     requests = None
 
+from notifier import format_quota
+
 
 class DingTalkNotifier:
     """钉钉机器人通知类"""
@@ -144,24 +146,6 @@ class DingTalkNotifier:
         except Exception as e:
             print(f'[钉钉通知] 发送异常: {e}')
             return False
-
-
-def format_quota(quota: int) -> str:
-    """
-    格式化额度显示
-    
-    Args:
-        quota: 额度数值
-        
-    Returns:
-        格式化后的字符串
-    """
-    if quota >= 1000000:
-        return f'{quota / 1000000:.2f}M'
-    elif quota >= 1000:
-        return f'{quota / 1000:.2f}K'
-    else:
-        return str(quota)
 
 
 def build_checkin_report(results: List[Dict[str, Any]], execution_time: str) -> str:
@@ -293,40 +277,4 @@ def send_checkin_notification(results: List[Dict[str, Any]], execution_time: Opt
     return notifier.send_markdown(title, report)
 
 
-# 测试入口
-if __name__ == '__main__':
-    # 测试数据
-    test_results = [
-        {
-            'name': '主力站',
-            'success': True,
-            'message': '签到成功',
-            'quota_awarded': 500000,
-            'checkin_count': 15
-        },
-        {
-            'name': '备用站',
-            'success': True,
-            'message': '签到成功',
-            'quota_awarded': 100000,
-            'checkin_count': 8
-        },
-        {
-            'name': '测试站',
-            'success': False,
-            'message': 'Session 已过期',
-            'session_expired': True
-        }
-    ]
-    
-    # 打印预览
-    report = build_checkin_report(test_results, datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-    print('=== 消息预览 ===')
-    print(report)
-    print('================')
-    
-    # 如果配置了环境变量则发送
-    if os.environ.get('DINGTALK_WEBHOOK'):
-        send_checkin_notification(test_results)
-    else:
-        print('\n提示: 设置 DINGTALK_WEBHOOK 环境变量后可测试实际发送')
+
