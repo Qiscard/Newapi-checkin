@@ -182,15 +182,16 @@ def build_checkin_report(results: List[Dict[str, Any]], execution_time: str) -> 
     if success_list:
         lines.append(f'## ✅ 成功 ({len(success_list)}个)')
         lines.append('')
-        lines.append('| 账号 | 奖励 | 详情 |')
-        lines.append('|------|------|------|')
+        lines.append('| 账号 | 奖励 | 详情 | 抽奖 |')
+        lines.append('|------|------|------|------|')
         for r in success_list:
             name = r.get('name', '未知账号')
             quota = r.get('quota_awarded', 0)
             quota_str = f'+{format_quota(quota)}' if quota else '-'
             checkin_count = r.get('checkin_count')
             detail = f'已签 {checkin_count} 天' if checkin_count else r.get('message', '成功')
-            lines.append(f'| {name} | {quota_str} | {detail} |')
+            lottery = '<br/>'.join(r.get('lottery', [])) or '-'
+            lines.append(f'| {name} | {quota_str} | {detail} | {lottery} |')
         lines.append('')
     
     # 失败列表

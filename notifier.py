@@ -49,7 +49,8 @@ def build_report_text(results: List[Dict[str, Any]], execution_time: str) -> str
             quota_str = f'+{format_quota(quota)}' if quota > 0 else '-'
             checkin_count = r.get('checkin_count')
             detail = f'已签 {checkin_count} 天' if checkin_count else r.get('message', '成功')
-            lines.append(f'  {name} | {quota_str} | {detail}')
+            lottery = ' / '.join(r.get('lottery', [])) or '-'
+            lines.append(f'  {name} | {quota_str} | {detail} | {lottery}')
         lines.append('')
 
     if fail_list:
@@ -100,12 +101,14 @@ def build_report_html(results: List[Dict[str, Any]], execution_time: str) -> str
             quota_str = f'+{format_quota(quota)}' if quota > 0 else '-'
             checkin_count = r.get('checkin_count')
             detail = f'已签 {checkin_count} 天' if checkin_count else r.get('message', '成功')
+            lottery = ' / '.join(r.get('lottery', [])) or '-'
             rows += f'<tr><td style="padding:4px 10px;">{name}</td>'
             rows += f'<td style="padding:4px 10px;">{quota_str}</td>'
-            rows += f'<td style="padding:4px 10px;">{detail}</td></tr>'
+            rows += f'<td style="padding:4px 10px;">{detail}</td>'
+            rows += f'<td style="padding:4px 10px;">{lottery}</td></tr>'
 
     if fail_list:
-        rows += '<tr><td colspan="3" style="background:#fff5f5;font-weight:bold;padding:6px 10px;">'
+        rows += '<tr><td colspan="4" style="background:#fff5f5;font-weight:bold;padding:6px 10px;">'
         rows += f'❌ 失败 ({len(fail_list)}个)</td></tr>'
         for r in fail_list:
             name = r.get('name', '未知账号')
@@ -263,8 +266,8 @@ def send_serverchan_notification(results: List[Dict[str, Any]], execution_time: 
     if success_list:
         lines.append(f'### ✅ 成功 ({len(success_list)}个)')
         lines.append('')
-        lines.append('| 账号 | 奖励 | 结果 | 已签 |')
-        lines.append('|------|------|------|------|')
+        lines.append('| 账号 | 奖励 | 结果 | 已签 | 抽奖 |')
+        lines.append('|------|------|------|------|------|')
         for r in success_list:
             name = r.get('name', '未知账号')
             quota = r.get('quota_awarded') or 0
@@ -272,7 +275,8 @@ def send_serverchan_notification(results: List[Dict[str, Any]], execution_time: 
             message = r.get('message', '成功')
             checkin_count = r.get('checkin_count')
             days = f'已签 {checkin_count} 天' if checkin_count else '-'
-            lines.append(f'| {name} | {quota_str} | {message} | {days} |')
+            lottery = ' / '.join(r.get('lottery', [])) or '-'
+            lines.append(f'| {name} | {quota_str} | {message} | {days} | {lottery} |')
         lines.append('')
 
     # 失败列表

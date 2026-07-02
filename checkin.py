@@ -31,6 +31,13 @@ except ImportError:
     send_email_notification = None
     send_serverchan_notification = None
 
+try:
+    from lottery import run_for_account as lottery_run_for_account
+    from lottery import run_gwent_for_account
+except ImportError:
+    lottery_run_for_account = None
+    run_gwent_for_account = None
+
 
 class NewAPICheckin:
     """NewAPI 签到类"""
@@ -110,7 +117,17 @@ class NewAPICheckin:
                 timeout=30
             )
 
-            data = resp.json()
+            if resp.status_code == 429:
+                print(f'  [登录] 请求过多 (429)，跳过登录')
+                return False
+
+            try:
+                data = resp.json()
+            except json.JSONDecodeError:
+                content_preview = resp.text[:100] if resp.text else '(空响应)'
+                print(f'  [登录] 响应格式错误 (HTTP {resp.status_code}): {content_preview}')
+                return False
+
             if resp.status_code == 200 and data.get('success'):
                 # 从响应 cookie 中获取新的 session_id
                 new_session = None
@@ -616,6 +633,7 @@ def main():
     if not accounts_str:
         accounts_str = os.environ.get('NEWAPI_ACCOUNTS', '')
 
+    from_env_file = False
     if not accounts_str:
         env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
         if os.path.isfile(env_file):
@@ -624,6 +642,7 @@ def main():
                     line = line.strip()
                     if line.startswith('NEWAPI_ACCOUNTS='):
                         accounts_str = line[len('NEWAPI_ACCOUNTS='):]
+                        from_env_file = True
                         break
 
     if not accounts_str:
@@ -642,12 +661,13 @@ def main():
     success_count = 0
     fail_count = 0
     checkin_results = []
+    session_updated = False
 
     for i, account in enumerate(accounts, 1):
         url = account['url']
         session_cookie = account['session']
-        user_id = account.get('user_id')  # 获取用户ID（如果提供）
-        cf_clearance = account.get('cf_clearance')  # 获取 CF clearance（如果提供）
+        user_id = account.get('user_id')
+        cf_clearance = account.get('cf_clearance')
         login_username = account.get('login_username')
         login_password = account.get('login_password')
         name = account.get('name') or f'账号{i}'
@@ -659,8 +679,11 @@ def main():
 
         client = NewAPICheckin(url, session_cookie, user_id, cf_clearance, login_username, login_password)
 
-        # 获取用户信息
+        # 获取用户信息（可能触发自动登录）
         user_info = client.get_user_info()
+        if client.session_cookie != session_cookie:
+            account['session'] = client.session_cookie
+            session_updated = True
         if user_info:
             username = user_info.get('username', '未知')
             # 用户名也脱敏，只显示前3个字符
@@ -671,6 +694,9 @@ def main():
 
         # 执行签到
         result = client.checkin()
+        if client.session_cookie != session_cookie:
+            account['session'] = client.session_cookie
+            session_updated = True
         checkin_count = 0  # 默认值，避免历史接口失败时未定义
 
         if result['success']:
@@ -707,13 +733,50 @@ def main():
                     total_str = str(total_quota)
                 print(f'  统计: 本月已签 {checkin_count} 天，累计 {total_str} 额度')
 
+            # 抽奖（仅 lanxiu.cc 本地运行，GitHub Actions 跳过 — 绑定映射无法持久化）
+            lottery_items = []
+            if 'lanxiu.cc' in url and lottery_run_for_account and not os.environ.get('GITHUB_ACTIONS'):
+                display_name = (user_info or {}).get('username') or account.get('login_username')
+                if display_name:
+                    for rnd in range(2):
+                        prize, err = lottery_run_for_account(
+                            client.session, url, display_name)
+                        if err:
+                            lottery_items.append(f'⏭️ {err}')
+                            print(f'  抽奖: ⏭️ {err}')
+                            break
+                        if prize:
+                            q = prize.get('quota_awarded', 0)
+                            qs = f'{q/1000000:.2f}M' if q >= 1000000 else f'{q/1000:.2f}K' if q >= 1000 else str(q)
+                            line = f'🎉 {prize["prize_name"]} +{qs}'
+                            lottery_items.append(line)
+                            print(f'  抽奖: {line}')
+                            if prize.get('remaining_times', 0) <= 0:
+                                break
+
+            # 维云翻卡（本地和 GitHub Actions 都运行，最多 3 次）
+            if 'vsllm.com' in url and run_gwent_for_account:
+                for rnd in range(3):
+                    prize, err = run_gwent_for_account(client.session, url)
+                    if err:
+                        lottery_items.append(f'⏭️ {err}')
+                        print(f'  翻卡: ⏭️ {err}')
+                        break
+                    if prize:
+                        q = prize.get('quota_awarded', 0)
+                        qs = f'{q/1000000:.2f}M' if q >= 1000000 else f'{q/1000:.2f}K' if q >= 1000 else str(q)
+                        line = f'🎉 第{rnd+1}次 {prize["prize_name"]} +{qs}'
+                        lottery_items.append(line)
+                        print(f'  翻卡: {line}')
+
             # 收集结果用于钉钉通知
             account_result = {
                 'name': name,
                 'success': True,
                 'message': result['message'],
                 'quota_awarded': result.get('quota_awarded'),
-                'checkin_count': checkin_count
+                'checkin_count': checkin_count,
+                'lottery': lottery_items
             }
             checkin_results.append(account_result)
         else:
@@ -757,6 +820,25 @@ def main():
         send_serverchan_notification(checkin_results, execution_time)
     elif os.environ.get('SERVERCHAN_SENDKEY'):
         print('[警告] 已配置 SERVERCHAN_SENDKEY 但无法导入通知模块')
+
+    # 回写 .env（仅限从 .env 加载且 session 有更新的本地运行）
+    if from_env_file and session_updated and not os.environ.get('GITHUB_ACTIONS'):
+        env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+        print('\n[Session] 检测到 session 已更新，正在回写 .env...')
+        new_accounts_str = json.dumps(accounts, ensure_ascii=False)
+        with open(env_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+        marker = 'NEWAPI_ACCOUNTS='
+        idx = content.find(marker)
+        if idx != -1:
+            line_end = content.find('\n', idx)
+            if line_end == -1:
+                line_end = len(content)
+            new_line = marker + new_accounts_str
+            new_content = content[:idx] + new_line + content[line_end:]
+            with open(env_file, 'w', encoding='utf-8') as f:
+                f.write(new_content)
+            print('[Session] .env 已更新')
 
     # 如果全部失败则返回错误码
     if fail_count == len(accounts):

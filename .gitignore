@@ -45,6 +45,7 @@ config.json
 accounts.json
 newapi_accounts.json
 newapi_accounts.txt
+lottery_bindings.json
 
 # 日志
 *.log
