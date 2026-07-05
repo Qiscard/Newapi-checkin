@@ -25,11 +25,10 @@ def test_checkin(base_url: str, session_cookie: str, user_id: str = None, verbos
     # 创建客户端
     client = NewAPICheckin(base_url, session_cookie, user_id)
 
-    # 显示提取的用户ID
     if client.user_id:
-        print(f'✅ 从 Session 中提取到用户ID: {client.user_id}')
+        print(f'✅ 用户ID: {client.user_id}')
     else:
-        print('⚠️  未能从 Session 中提取用户ID，将尝试从 API 获取')
+        print('⚠️  未配置用户ID，将尝试从 API 获取')
     print()
 
     # 测试获取用户信息

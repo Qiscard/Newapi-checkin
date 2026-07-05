@@ -1430,6 +1430,18 @@
                         <input type="text" id="acc-name-${siteId}-${accIdx}" placeholder="主力站 / 备用站">
                     </div>
                 </div>
+                <div class="account-login-fields" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>登录账号（可选）</label>
+                        <input type="text" id="acc-login-user-${siteId}-${accIdx}" placeholder="session失效时用于重新获取">
+                        <small style="color: rgba(245, 158, 11, 0.7);">session过期时自动登录</small>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>登录密码（可选）</label>
+                        <input type="password" id="acc-login-pass-${siteId}-${accIdx}" placeholder="留空则不尝试自动登录">
+                        <small style="color: rgba(245, 158, 11, 0.7);">如果没填，session失效直接报错</small>
+                    </div>
+                </div>
             `;
 
             accountsContainer.appendChild(accItem);
@@ -1502,6 +1514,8 @@
                     const session = document.getElementById(`acc-session-${sId}-${aId}`).value.trim();
                     const userId = document.getElementById(`acc-userid-${sId}-${aId}`).value.trim();
                     const name = document.getElementById(`acc-name-${sId}-${aId}`).value.trim();
+                    const loginUser = document.getElementById(`acc-login-user-${sId}-${aId}`)?.value.trim() || '';
+                    const loginPass = document.getElementById(`acc-login-pass-${sId}-${aId}`)?.value.trim() || '';
 
                     if (!session || !userId) {
                         alert(`站点 ${siteId} 账号 ${aId}: Session 和 用户ID 不能为空`);
@@ -1518,6 +1532,13 @@
 
                     if (cfClearance) {
                         account.cf_clearance = cfClearance;
+                    }
+
+                    if (loginUser) {
+                        account.login_username = loginUser;
+                    }
+                    if (loginPass) {
+                        account.login_password = loginPass;
                     }
 
                     accounts.push(account);
@@ -1626,7 +1647,9 @@
                     accs.push({
                         session: document.getElementById(`acc-session-${sId}-${aId}`).value.trim(),
                         userId: document.getElementById(`acc-userid-${sId}-${aId}`).value.trim(),
-                        name: document.getElementById(`acc-name-${sId}-${aId}`).value.trim()
+                        name: document.getElementById(`acc-name-${sId}-${aId}`).value.trim(),
+                        loginUser: document.getElementById(`acc-login-user-${sId}-${aId}`)?.value.trim() || '',
+                        loginPass: document.getElementById(`acc-login-pass-${sId}-${aId}`)?.value.trim() || ''
                     });
                 });
 
@@ -1682,6 +1705,10 @@
                         document.getElementById(`acc-session-${sid}-${aid}`).value = acc.session || '';
                         document.getElementById(`acc-userid-${sid}-${aid}`).value = acc.userId || '';
                         document.getElementById(`acc-name-${sid}-${aid}`).value = acc.name || '';
+                        const loginUserEl = document.getElementById(`acc-login-user-${sid}-${aid}`);
+                        const loginPassEl = document.getElementById(`acc-login-pass-${sid}-${aid}`);
+                        if (loginUserEl) loginUserEl.value = acc.loginUser || '';
+                        if (loginPassEl) loginPassEl.value = acc.loginPass || '';
                     });
                 }
             });
@@ -1697,7 +1724,9 @@
                 grouped[key].accounts.push({
                     session: acc.session || '',
                     userId: acc.userId || acc.user_id || '',
-                    name: acc.name || ''
+                    name: acc.name || '',
+                    loginUser: acc.loginUser || acc.login_username || '',
+                    loginPass: acc.loginPass || acc.login_password || ''
                 });
             });
             loadGroupedData(Object.values(grouped));
@@ -2234,6 +2263,8 @@
                     const session = document.getElementById(`acc-session-${sId}-${aId}`).value.trim();
                     const userId = document.getElementById(`acc-userid-${sId}-${aId}`).value.trim();
                     const name = document.getElementById(`acc-name-${sId}-${aId}`).value.trim();
+                    const loginUser = document.getElementById(`acc-login-user-${sId}-${aId}`)?.value.trim() || '';
+                    const loginPass = document.getElementById(`acc-login-pass-${sId}-${aId}`)?.value.trim() || '';
 
                     if (!session) return;
 
@@ -2246,6 +2277,13 @@
 
                     if (cfClearance) {
                         account.cf_clearance = cfClearance;
+                    }
+
+                    if (loginUser) {
+                        account.login_username = loginUser;
+                    }
+                    if (loginPass) {
+                        account.login_password = loginPass;
                     }
 
                     accounts.push(account);
@@ -2383,7 +2421,7 @@
                 }
 
                 loadFlatData(accounts);
-                showCloudStatus('success', `✅ 成功从云端加载 ${accounts.length} 个账号配置！`);
+            showCloudStatus('success', `✅ 成功从云端加载 ${accounts.length} 个账号配置！`);
                 saveCloudConfigToLocal();
             } catch (e) {
                 if (e instanceof SyntaxError) {

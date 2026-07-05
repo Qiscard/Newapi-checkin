@@ -8,7 +8,6 @@ NewAPI 自动签到脚本
 import os
 import sys
 import json
-import base64
 import requests
 from datetime import datetime
 from typing import Optional
@@ -25,6 +24,19 @@ try:
     from dingtalk_notifier import send_checkin_notification
 except ImportError:
     send_checkin_notification = None
+
+try:
+    from notifier import send_email_notification, send_serverchan_notification
+except ImportError:
+    send_email_notification = None
+    send_serverchan_notification = None
+
+try:
+    from lottery import run_for_account as lottery_run_for_account
+    from lottery import run_gwent_for_account
+except ImportError:
+    lottery_run_for_account = None
+    run_gwent_for_account = None
 
 
 class NewAPICheckin:
@@ -57,11 +69,14 @@ class NewAPICheckin:
         """
         return '****'
 
-    def __init__(self, base_url: str, session_cookie: str, user_id: str = None, cf_clearance: str = None):
+    def __init__(self, base_url: str, session_cookie: str, user_id: str = None, cf_clearance: str = None,
+                 login_username: str = None, login_password: str = None):
         self.base_url = base_url.rstrip('/')
         self.session_cookie = session_cookie
         self.original_cf_clearance = cf_clearance
         self.cf_bypassed = False
+        self.login_username = login_username
+        self.login_password = login_password
         self.session = requests.Session()
         self.session.cookies.set('session', session_cookie)
 
@@ -76,47 +91,78 @@ class NewAPICheckin:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         })
 
+        self.user_id = user_id
         if user_id:
-            self.user_id = user_id
             self.session.headers.update({'new-api-user': str(user_id)})
-        else:
-            self.user_id = self._extract_user_id_from_session(session_cookie)
-            if self.user_id:
-                self.session.headers.update({'new-api-user': str(self.user_id)})
 
-    def _extract_user_id_from_session(self, session_cookie: str) -> Optional[str]:
+    def _try_login(self) -> bool:
         """
-        从 Session Cookie 中提取用户ID
+        尝试使用配置的账号密码重新登录，获取新的 session
 
-        Session Cookie 格式通常是 Base64 编码的数据
+        登录接口：POST /api/user/login
+        请求体：{"username": x, "password": x}
+        成功时 cookie 中包含新的 session_id
+
+        Returns:
+            True 如果登录成功，False 否则
         """
+        if not self.login_username or not self.login_password:
+            return False
+
+        print(f'  [登录] 尝试重新登录...')
         try:
-            # 尝试解码 Session Cookie
-            # Session 格式类似：MTc2NzQxMzYzM3xE...
-            # 解码后可能包含用户信息
-            decoded = base64.b64decode(session_cookie + '==')  # 添加 padding
-            decoded_str = decoded.decode('utf-8', errors='ignore')
+            resp = self.session.post(
+                f'{self.base_url}/api/user/login',
+                json={'username': self.login_username, 'password': self.login_password},
+                timeout=30
+            )
 
-            # 查找可能的用户ID模式
-            # 例如：linuxdo_988 中的 988
-            import re
-            # 查找 "linuxdo_数字" 或 "id"=数字 等模式
-            patterns = [
-                r'linuxdo[_-](\d+)',  # linuxdo_988
-                r'"id"[:\s]+(\d+)',    # "id": 988
-                r'user[_-](\d+)',      # user_988
-                r'userid[:\s]+(\d+)',  # userid: 988
-            ]
+            if resp.status_code == 429:
+                print(f'  [登录] 请求过多 (429)，跳过登录')
+                return False
 
-            for pattern in patterns:
-                match = re.search(pattern, decoded_str, re.IGNORECASE)
-                if match:
-                    return match.group(1)
+            try:
+                data = resp.json()
+            except json.JSONDecodeError:
+                content_preview = resp.text[:100] if resp.text else '(空响应)'
+                print(f'  [登录] 响应格式错误 (HTTP {resp.status_code}): {content_preview}')
+                return False
 
-        except Exception:
-            pass
+            if resp.status_code == 200 and data.get('success'):
+                # 从响应 cookie 中获取新的 session_id
+                new_session = None
+                for cookie in resp.cookies:
+                    if cookie.name == 'session' or cookie.name == 'session_id':
+                        new_session = cookie.value
+                        break
 
-        return None
+                if new_session:
+                    self.session_cookie = new_session
+                    self.session.cookies.set('session', new_session)
+                    print(f'  [登录] 登录成功，已更新 session')
+                    return True
+                else:
+                    # 可能 session cookie 在 set-cookie 头中
+                    set_cookie = resp.headers.get('Set-Cookie', '')
+                    import re
+                    match = re.search(r'(?:session|session_id)=([^;]+)', set_cookie)
+                    if match:
+                        new_session = match.group(1)
+                        self.session_cookie = new_session
+                        self.session.cookies.set('session', new_session)
+                        print(f'  [登录] 登录成功，已更新 session')
+                        return True
+
+                    print(f'  [登录] 登录成功但未获取到新的 session cookie')
+                    return False
+            else:
+                msg = data.get('message', '未知错误')
+                print(f'  [登录] 登录失败: {msg}')
+                return False
+
+        except Exception as e:
+            print(f'  [登录] 登录请求异常: {e}')
+            return False
 
     def get_user_info(self, verbose: bool = False) -> Optional[dict]:
         """
@@ -139,7 +185,32 @@ class NewAPICheckin:
                 print(f'[错误] 认证失败 (401): Session 可能已过期')
                 if verbose:
                     print(f'  [调试] 完整响应: {resp.text[:500]}')
-                return None
+
+                # 尝试自动登录
+                if self._try_login():
+                    print(f'  [登录] 重试获取用户信息...')
+                    resp = self.session.get(f'{self.base_url}/api/user/self', timeout=30)
+                    if resp.status_code == 200:
+                        try:
+                            data = resp.json()
+                            if data.get('success'):
+                                user_data = data.get('data')
+                                if user_data and 'id' in user_data:
+                                    self.user_id = user_data['id']
+                                    self.session.headers.update({
+                                        'new-api-user': str(self.user_id)
+                                    })
+                                return user_data
+                        except Exception:
+                            pass
+                    print(f'  [登录] 重试后仍无法获取用户信息')
+                    return None
+                else:
+                    if self.login_username and self.login_password:
+                        print('  [登录] 尝试登录不成功')
+                    else:
+                        print('  [登录] 未配置账号密码，无法自动重新登录')
+                    return None
 
             # 尝试解析 JSON
             try:
@@ -216,7 +287,28 @@ class NewAPICheckin:
 
             if resp.status_code == 401:
                 result['message'] = '认证失败: Session 可能已过期，请重新获取'
-                return result
+                # 尝试自动登录
+                if self._try_login():
+                    print(f'  [登录] 重试签到...')
+                    resp = self.session.post(f'{self.base_url}/api/user/checkin', timeout=30)
+                    if resp.status_code == 200:
+                        try:
+                            data = resp.json()
+                            if data.get('success'):
+                                result['success'] = True
+                                result['message'] = data.get('message', '签到成功')
+                                checkin_data = data.get('data', {})
+                                result['checkin_date'] = checkin_data.get('checkin_date')
+                                result['quota_awarded'] = checkin_data.get('quota_awarded')
+                                return result
+                        except Exception:
+                            pass
+                    result['message'] = '重新登录后签到失败'
+                    return result
+                else:
+                    if self.login_username and self.login_password:
+                        result['message'] = '尝试登录不成功'
+                    return result
 
             try:
                 data = resp.json()
@@ -245,7 +337,14 @@ class NewAPICheckin:
                     result['checkin_date'] = checkin_data.get('checkin_date')
                     result['quota_awarded'] = checkin_data.get('quota_awarded')
                 else:
-                    result['message'] = data.get('message', '签到失败')
+                    message = data.get('message', '签到失败')
+                    already_keywords = ['已签到', '已经签到', 'already', '重复签到']
+                    already_checked_in = any(k in message for k in already_keywords)
+                    if already_checked_in:
+                        result['success'] = True
+                        result['message'] = message
+                    else:
+                        result['message'] = message
             else:
                 result['message'] = f'HTTP {resp.status_code}: {data.get("message", "未知错误")}'
 
@@ -368,6 +467,11 @@ def parse_accounts(accounts_str: str) -> list:
                     # 如果提供了 cf_clearance，添加到账号信息中
                     if 'cf_clearance' in item:
                         account['cf_clearance'] = item['cf_clearance']
+                    # 如果提供了登录账号密码，添加到账号信息中
+                    if 'login_username' in item:
+                        account['login_username'] = item['login_username']
+                    if 'login_password' in item:
+                        account['login_password'] = item['login_password']
                     accounts.append(account)
             return accounts
     except json.JSONDecodeError:
@@ -448,6 +552,30 @@ def load_config_from_cloud(config_url: str, config_auth: str = None) -> Optional
                 if dt.get('webhook'):
                     print('[云端] 已从云端加载钉钉通知配置')
 
+            if data.get('email'):
+                em = data['email']
+                if em.get('smtp_host') and not os.environ.get('EMAIL_SMTP_HOST'):
+                    os.environ['EMAIL_SMTP_HOST'] = em['smtp_host']
+                if em.get('smtp_port') and not os.environ.get('EMAIL_SMTP_PORT'):
+                    os.environ['EMAIL_SMTP_PORT'] = str(em['smtp_port'])
+                if em.get('user') and not os.environ.get('EMAIL_USER'):
+                    os.environ['EMAIL_USER'] = em['user']
+                if em.get('pass') and not os.environ.get('EMAIL_PASS'):
+                    os.environ['EMAIL_PASS'] = em['pass']
+                if em.get('to') and not os.environ.get('EMAIL_TO'):
+                    os.environ['EMAIL_TO'] = em['to']
+                if em.get('from_addr') and not os.environ.get('EMAIL_FROM'):
+                    os.environ['EMAIL_FROM'] = em['from_addr']
+                if em.get('smtp_host'):
+                    print('[云端] 已从云端加载邮件通知配置')
+
+            if data.get('serverchan'):
+                sc = data['serverchan']
+                if sc.get('sendkey') and not os.environ.get('SERVERCHAN_SENDKEY'):
+                    os.environ['SERVERCHAN_SENDKEY'] = sc['sendkey']
+                if sc.get('sendkey'):
+                    print('[云端] 已从云端加载 ServerChan 通知配置')
+
             return accounts_str
         else:
             print('[云端] 配置格式错误: 无法解析账号列表')
@@ -467,8 +595,25 @@ def load_config_from_cloud(config_url: str, config_auth: str = None) -> Optional
         return None
 
 
+def load_env_file():
+    """加载脚本同目录下的 .env 文件到环境变量"""
+    env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+    if os.path.isfile(env_file):
+        with open(env_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#') or '=' not in line:
+                    continue
+                key, _, value = line.partition('=')
+                key = key.strip()
+                value = value.strip()
+                if key and value:
+                    os.environ.setdefault(key, value)
+
+
 def main():
     """主函数"""
+    load_env_file()
     import pytz
     beijing_tz = pytz.timezone('Asia/Shanghai')
     execution_time = datetime.now(beijing_tz).strftime("%Y-%m-%d %H:%M:%S")
@@ -488,6 +633,18 @@ def main():
     if not accounts_str:
         accounts_str = os.environ.get('NEWAPI_ACCOUNTS', '')
 
+    from_env_file = False
+    if not accounts_str:
+        env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+        if os.path.isfile(env_file):
+            with open(env_file, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith('NEWAPI_ACCOUNTS='):
+                        accounts_str = line[len('NEWAPI_ACCOUNTS='):]
+                        from_env_file = True
+                        break
+
     if not accounts_str:
         print('[错误] 未配置账号信息')
         print('请设置 CONFIG_URL（云端配置）或 NEWAPI_ACCOUNTS（本地配置）环境变量')
@@ -504,12 +661,15 @@ def main():
     success_count = 0
     fail_count = 0
     checkin_results = []
+    session_updated = False
 
     for i, account in enumerate(accounts, 1):
         url = account['url']
         session_cookie = account['session']
-        user_id = account.get('user_id')  # 获取用户ID（如果提供）
-        cf_clearance = account.get('cf_clearance')  # 获取 CF clearance（如果提供）
+        user_id = account.get('user_id')
+        cf_clearance = account.get('cf_clearance')
+        login_username = account.get('login_username')
+        login_password = account.get('login_password')
         name = account.get('name') or f'账号{i}'
 
         print(f'[{i}/{len(accounts)}] {name}')
@@ -517,10 +677,13 @@ def main():
         if user_id:
             print(f'  用户ID: {NewAPICheckin._mask_user_id(user_id)}')
 
-        client = NewAPICheckin(url, session_cookie, user_id, cf_clearance)
+        client = NewAPICheckin(url, session_cookie, user_id, cf_clearance, login_username, login_password)
 
-        # 获取用户信息
+        # 获取用户信息（可能触发自动登录）
         user_info = client.get_user_info()
+        if client.session_cookie != session_cookie:
+            account['session'] = client.session_cookie
+            session_updated = True
         if user_info:
             username = user_info.get('username', '未知')
             # 用户名也脱敏，只显示前3个字符
@@ -531,6 +694,9 @@ def main():
 
         # 执行签到
         result = client.checkin()
+        if client.session_cookie != session_cookie:
+            account['session'] = client.session_cookie
+            session_updated = True
         checkin_count = 0  # 默认值，避免历史接口失败时未定义
 
         if result['success']:
@@ -567,13 +733,50 @@ def main():
                     total_str = str(total_quota)
                 print(f'  统计: 本月已签 {checkin_count} 天，累计 {total_str} 额度')
 
+            # 抽奖（仅 lanxiu.cc 本地运行，GitHub Actions 跳过 — 绑定映射无法持久化）
+            lottery_items = []
+            if 'lanxiu.cc' in url and lottery_run_for_account and not os.environ.get('GITHUB_ACTIONS'):
+                display_name = (user_info or {}).get('username') or account.get('login_username')
+                if display_name:
+                    for rnd in range(2):
+                        prize, err = lottery_run_for_account(
+                            client.session, url, display_name)
+                        if err:
+                            lottery_items.append(f'⏭️ {err}')
+                            print(f'  抽奖: ⏭️ {err}')
+                            break
+                        if prize:
+                            q = prize.get('quota_awarded', 0)
+                            qs = f'{q/1000000:.2f}M' if q >= 1000000 else f'{q/1000:.2f}K' if q >= 1000 else str(q)
+                            line = f'🎉 {prize["prize_name"]} +{qs}'
+                            lottery_items.append(line)
+                            print(f'  抽奖: {line}')
+                            if prize.get('remaining_times', 0) <= 0:
+                                break
+
+            # 维云翻卡（本地和 GitHub Actions 都运行，最多 3 次）
+            if 'vsllm.com' in url and run_gwent_for_account:
+                for rnd in range(3):
+                    prize, err = run_gwent_for_account(client.session, url)
+                    if err:
+                        lottery_items.append(f'⏭️ {err}')
+                        print(f'  翻卡: ⏭️ {err}')
+                        break
+                    if prize:
+                        q = prize.get('quota_awarded', 0)
+                        qs = f'{q/1000000:.2f}M' if q >= 1000000 else f'{q/1000:.2f}K' if q >= 1000 else str(q)
+                        line = f'🎉 第{rnd+1}次 {prize["prize_name"]} +{qs}'
+                        lottery_items.append(line)
+                        print(f'  翻卡: {line}')
+
             # 收集结果用于钉钉通知
             account_result = {
                 'name': name,
                 'success': True,
                 'message': result['message'],
                 'quota_awarded': result.get('quota_awarded'),
-                'checkin_count': checkin_count
+                'checkin_count': checkin_count,
+                'lottery': lottery_items
             }
             checkin_results.append(account_result)
         else:
@@ -603,6 +806,39 @@ def main():
         send_checkin_notification(checkin_results, execution_time)
     elif os.environ.get('DINGTALK_WEBHOOK'):
         print('[警告] 已配置 DINGTALK_WEBHOOK 但无法导入通知模块')
+
+    # 发送邮件通知
+    if send_email_notification and os.environ.get('EMAIL_SMTP_HOST'):
+        print('正在发送邮件通知...')
+        send_email_notification(checkin_results, execution_time)
+    elif os.environ.get('EMAIL_SMTP_HOST'):
+        print('[警告] 已配置邮件参数但无法导入通知模块')
+
+    # 发送 ServerChan 通知
+    if send_serverchan_notification:
+        print('正在发送 ServerChan 通知...')
+        send_serverchan_notification(checkin_results, execution_time)
+    elif os.environ.get('SERVERCHAN_SENDKEY'):
+        print('[警告] 已配置 SERVERCHAN_SENDKEY 但无法导入通知模块')
+
+    # 回写 .env（仅限从 .env 加载且 session 有更新的本地运行）
+    if from_env_file and session_updated and not os.environ.get('GITHUB_ACTIONS'):
+        env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+        print('\n[Session] 检测到 session 已更新，正在回写 .env...')
+        new_accounts_str = json.dumps(accounts, ensure_ascii=False)
+        with open(env_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+        marker = 'NEWAPI_ACCOUNTS='
+        idx = content.find(marker)
+        if idx != -1:
+            line_end = content.find('\n', idx)
+            if line_end == -1:
+                line_end = len(content)
+            new_line = marker + new_accounts_str
+            new_content = content[:idx] + new_line + content[line_end:]
+            with open(env_file, 'w', encoding='utf-8') as f:
+                f.write(new_content)
+            print('[Session] .env 已更新')
 
     # 如果全部失败则返回错误码
     if fail_count == len(accounts):

@@ -12,7 +12,14 @@
 - ✅ 错误处理和超时控制
 - ✅ 支持手动触发和定时任务
 - ✅ **钉钉通知**（签到完成后自动推送结果）
+- ✅ **邮件通知**（支持 SMTP 发送签到报告）
+- ✅ **Server酱推送**（支持 ServerChan 微信推送）
+- ✅ **Session 自动续期**（过期后自动使用配置的账号密码重新登录，新 session 自动回写 .env）
+- ✅ **重复签到检测**（已签到自动标记成功，避免误报）
 - ✅ **工作流保活**（防止 GitHub Actions 自动禁用）
+- ✅ **请求限流处理**（登录接口返回 429 时友好跳过，不会直接报错）
+- ✅ **哈基米中转站专属抽奖**（lanxiu.cc 站点签到后自动抽取额度，每日 2 次，仅本地运行）
+- ✅ **维云中转站专属翻卡**（vsllm.com 站点签到后自动翻卡，每日 3 次，本地和 GHA 均可运行）
 
 ## 🛠️ 配置工具（推荐）
 
@@ -293,11 +300,15 @@ schedule:
 - `0 16 * * *` - 每天 UTC 16:00（北京时间 0:00）
 
 
-### 🔔 钉钉通知配置（可选）
+### 🔔 通知配置（可选）
 
-签到完成后自动发送通知到钉钉群，包含签到结果、获得额度、Session 失效提醒等信息。
+签到完成后自动发送通知，支持 **钉钉**、**邮件**、**Server酱** 三种推送方式。
 
-#### 1. 创建钉钉机器人
+---
+
+#### 钉钉通知
+
+##### 1. 创建钉钉机器人
 
 1. 打开钉钉群 → **设置** → **智能群助手**
 2. 点击 **添加机器人** → 选择 **自定义**
@@ -305,30 +316,140 @@ schedule:
 4. 安全设置选择 **加签**（推荐）或 **自定义关键词**
 5. 复制 **Webhook 地址** 和 **签名密钥**
 
-#### 2. 添加 GitHub Secrets
-
-在仓库 Settings → Secrets and variables → Actions 中添加：
+##### 2. 添加 GitHub Secrets
 
 | Secret 名称 | 说明 | 是否必须 |
 |-------------|------|----------|
 | `DINGTALK_WEBHOOK` | 钉钉机器人 Webhook URL | 是 |
 | `DINGTALK_SECRET` | 加签密钥（以 SEC 开头） | 否（如开启加签则必须） |
 
-#### 3. 通知内容示例
+---
 
-签到完成后，钉钉群会收到类似以下的消息：
+#### 邮件通知
 
-`
+签到完成后通过 SMTP 发送签到报告到指定邮箱。
+
+##### 添加 GitHub Secrets
+
+| Secret 名称 | 说明 | 是否必须 |
+|-------------|------|----------|
+| `SMTP_HOST` | SMTP 服务器地址（如 `smtp.qq.com`） | 是 |
+| `SMTP_PORT` | SMTP 端口（如 `465`） | 否（默认 465） |
+| `SMTP_USER` | 发件邮箱地址 | 是 |
+| `SMTP_PASS` | 邮箱授权码或密码 | 是 |
+| `SMTP_TO` | 收件邮箱地址 | 是 |
+
+> **提示：** 使用 QQ 邮箱等需开启 SMTP 服务并获取授权码，非登录密码。
+
+---
+
+#### Server酱推送
+
+支持通过 [ServerChan](https://sct.ftqq.com/) 推送签到结果到微信。
+
+##### 添加 GitHub Secrets
+
+| Secret 名称 | 说明 | 是否必须 |
+|-------------|------|----------|
+| `SERVERCHAN_KEY` | ServerChan SendKey | 是 |
+
+---
+
+#### 通知内容示例
+
+```
 📋 NewAPI 签到报告
 执行时间: 2026-01-08 08:10:00
 
 ✅ 成功 (2个)
-| 账号 | 奖励 | 详情 |
-| 主力站 | +500K | 已签 15 天 |
-| 备用站 | +100K | 已签 8 天 |
+| 账号 | 奖励 | 详情 | 抽奖 |
+| 主力站 | +500K | 已签 15 天 | 🎉 小份额度 +5M |
+| 备用站 | +100K | 已签 8 天 | 🎉 暴击 +10.00K |
 
 汇总: 成功 2，失败 0
-`
+```
+
+### Session 自动续期
+
+脚本支持在 Session 过期时**自动使用配置的账号密码重新登录**，无需手动更新。
+
+#### 配置方式
+
+在 JSON 配置中为账号添加 `login_username` 和 `login_password` 字段：
+
+```json
+[
+  {
+    "url": "https://api.example.com",
+    "session": "当前session值",
+    "name": "主力站",
+    "login_username": "your_username",
+    "login_password": "your_password"
+  }
+]
+```
+
+> **提示：** 自动重新登录功能需要站点支持账号密码登录。登录成功后新 Session 会自动用于本次签到，无需额外操作。
+
+#### .env 自动回写
+
+本地运行（非 GitHub Actions）时，如果配置来自 `.env` 文件且登录产生了新 session，脚本会自动将更新后的 session **写回 `.env` 文件**，下次运行时直接使用新 session，无需手动复制粘贴。
+
+触发条件（三项同时满足）：
+1. 配置从 `.env` 文件的 `NEWAPI_ACCOUNTS=` 行加载
+2. 至少有一个账号成功自动登录，session 产生变更
+3. 非 GitHub Actions 环境运行
+
+仅替换 `NEWAPI_ACCOUNTS=` 那一行，文件中的注释和其他配置原样保留。
+
+---
+
+### 🎲 中转站专属抽奖/翻卡
+
+脚本内置了哈基米中转站和维云中转站的专属抽奖功能，签到后自动执行。
+
+#### 哈基米中转站（lanxiu.cc）
+
+签到成功后自动执行抽奖，每日最多 **2 次**。
+
+**流程：** 获取绑定 key → 绑定 openid → 抽奖
+
+绑定映射关系持久化到本地 `lottery_bindings.json` 文件，因此**仅在本地运行**时生效，GitHub Actions 环境自动跳过。
+
+**配置：** 哈基米中转站的账号需要在 JSON 配置中包含 `login_username` 和 `login_password` 字段，用于自动续签 session。
+
+**输出示例：**
+```
+  抽奖: 🎉 小份额度 +5M
+```
+
+#### 维云中转站（vsllm.com）
+
+签到成功后自动翻卡，每日最多 **3 次**，**本地和 GitHub Actions 均可运行**（无需持久化映射）。
+
+**流程：** 直接调用翻卡接口，无需绑定步骤。
+
+**翻卡结果示例：**
+```
+  翻卡: 🎉 第1次 暴击 +10.00K
+  翻卡: 🎉 第2次 小额惊喜 +1.00K
+  翻卡: 🎉 第3次 幸运降临 +100.00K
+```
+
+#### 通知推送
+
+抽奖/翻卡结果会一并纳入签到报告，在钉钉、邮件、ServerChan 的推送表格中显示为"抽奖"列：
+
+```
+| 账号 | 奖励 | 详情 | 抽奖 |
+| 哈基米1558 | +2.50M | 已签 15 天 | 🎉 小份额度 +5M |
+| 维云 | - | 已签 2 天 | 🎉 第1次 暴击 +10.00K / 🎉 第2次 小额惊喜 +1.00K |
+```
+
+冷却或已用完的情况显示 `⏭️ 今日已抽奖完成`。
+
+---
+
 ### 💾 网页工具本地存储功能
 
 网页配置生成器支持将配置保存到浏览器本地存储：
@@ -360,7 +481,7 @@ schedule:
 |------|------|------|
 | `URL#SESSION` | 单账号 | `https://api.example.com#MTc2NzQx...` |
 | `URL1#SESSION1,URL2#SESSION2` | 多网站/多账号（逗号分隔） | `https://a.com#sess1,https://b.com#sess2` |
-| JSON 数组 | 支持备注名称和用户ID（推荐） | 见上文 JSON 格式示例 |
+| JSON 数组 | 支持备注名称、用户ID和自动登录凭证（推荐） | 见下文 JSON 格式示例 |
 
 ### 多网站配置示例
 
@@ -501,9 +622,8 @@ NewAPI 自动签到
 **原因：** Session Cookie 过期或无效。
 
 **解决：**
-1. 重新登录网站
-2. 按照上述方法重新获取 Session Cookie
-3. 更新 GitHub Secrets 中的 `NEWAPI_ACCOUNTS` 配置
+1. 自动续期：在 JSON 配置中配置 `username` 和 `password` 字段，脚本会自动重新登录（见"Session 自动续期"章节）
+2. 手动更新：重新登录网站，获取新的 Session Cookie，更新 GitHub Secrets
 
 ### Q2: GitHub Actions 没有自动执行
 
@@ -1095,6 +1215,7 @@ Session Cookie 相当于**临时密码**，拥有它的人可以：
 - **HTTP 库：** requests
 - **CI/CD：** GitHub Actions
 - **配置工具：** HTML + JavaScript (网页版), Python (命令行版)
+- **通知推送：** 钉钉机器人 / SMTP 邮件 / ServerChan
 
 ---
 
@@ -1103,9 +1224,13 @@ Session Cookie 相当于**临时密码**，拥有它的人可以：
 | 文件 | 说明 |
 |------|------|
 | `checkin.py` | 主签到脚本 |
+| `lottery.py` | 中转站抽奖/翻卡模块（哈基米抽奖、维云翻卡） |
+| `notifier.py` | 通知推送模块（邮件/Server酱） |
+| `dingtalk_notifier.py` | 钉钉通知模块 |
 | `test_checkin.py` | 单站点测试脚本 |
 | `config_helper.py` | 命令行配置助手（交互式）|
 | `config_generator.html` | 网页配置生成器（可视化）|
+| `.env.example` | 通知推送环境变量配置模板 |
 | `.github/workflows/checkin.yml` | GitHub Actions 工作流 |
 | `requirements.txt` | Python 依赖 |
 | `README.md` | 项目文档 |
