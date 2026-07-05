@@ -26,10 +26,17 @@ except ImportError:
     send_checkin_notification = None
 
 try:
-    from notifier import send_email_notification, send_serverchan_notification
+    from notifier import send_email_notification, send_serverchan_notification, format_quota
 except ImportError:
     send_email_notification = None
     send_serverchan_notification = None
+
+    def format_quota(quota: int) -> str:
+        if quota >= 1000000:
+            return f'{quota / 1000000:.2f}M'
+        if quota >= 1000:
+            return f'{quota / 1000:.2f}K'
+        return str(quota)
 
 try:
     from lottery import run_for_account as lottery_run_for_account
@@ -73,8 +80,6 @@ class NewAPICheckin:
                  login_username: str = None, login_password: str = None):
         self.base_url = base_url.rstrip('/')
         self.session_cookie = session_cookie
-        self.original_cf_clearance = cf_clearance
-        self.cf_bypassed = False
         self.login_username = login_username
         self.login_password = login_password
         self.session = requests.Session()
@@ -387,8 +392,6 @@ class NewAPICheckin:
         if not browser_result:
             result['message'] = 'Cloudflare 绕过失败: 无法通过 CF 验证'
             return result
-
-        self.cf_bypassed = True
 
         if browser_result.get('error'):
             result['message'] = f'CF 绕过后签到失败: {browser_result["error"]}'
@@ -711,12 +714,7 @@ def main():
             if result['quota_awarded']:
                 quota = result['quota_awarded']
                 # 格式化额度显示
-                if quota >= 1000000:
-                    quota_str = f'{quota / 1000000:.2f}M'
-                elif quota >= 1000:
-                    quota_str = f'{quota / 1000:.2f}K'
-                else:
-                    quota_str = str(quota)
+                quota_str = format_quota(quota)
                 print(f'  奖励: +{quota_str} 额度 ({quota:,} tokens)')
 
             # 获取本月签到统计
@@ -725,12 +723,7 @@ def main():
                 stats = history['stats']
                 checkin_count = stats.get('checkin_count', 0)
                 total_quota = stats.get('total_quota', 0)
-                if total_quota >= 1000000:
-                    total_str = f'{total_quota / 1000000:.2f}M'
-                elif total_quota >= 1000:
-                    total_str = f'{total_quota / 1000:.2f}K'
-                else:
-                    total_str = str(total_quota)
+                total_str = format_quota(total_quota)
                 print(f'  统计: 本月已签 {checkin_count} 天，累计 {total_str} 额度')
 
             # 抽奖（仅 lanxiu.cc 本地运行，GitHub Actions 跳过 — 绑定映射无法持久化）
@@ -747,7 +740,7 @@ def main():
                             break
                         if prize:
                             q = prize.get('quota_awarded', 0)
-                            qs = f'{q/1000000:.2f}M' if q >= 1000000 else f'{q/1000:.2f}K' if q >= 1000 else str(q)
+                            qs = format_quota(q)
                             line = f'🎉 {prize["prize_name"]} +{qs}'
                             lottery_items.append(line)
                             print(f'  抽奖: {line}')
@@ -764,7 +757,7 @@ def main():
                         break
                     if prize:
                         q = prize.get('quota_awarded', 0)
-                        qs = f'{q/1000000:.2f}M' if q >= 1000000 else f'{q/1000:.2f}K' if q >= 1000 else str(q)
+                        qs = format_quota(q)
                         line = f'🎉 第{rnd+1}次 {prize["prize_name"]} +{qs}'
                         lottery_items.append(line)
                         print(f'  翻卡: {line}')
@@ -847,6 +840,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-# === DINGTALK NOTIFICATION PATCH ===
-# This section was added to send DingTalk notifications

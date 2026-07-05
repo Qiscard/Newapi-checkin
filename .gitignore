@@ -25,6 +25,9 @@ venv/
 ENV/
 env/
 
+# Node dependencies (config generator is static HTML/JS)
+node_modules/
+
 # IDE
 .vscode/
 .idea/

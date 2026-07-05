@@ -854,7 +854,7 @@
                     <h3>📋 生成的配置</h3>
                     <div class="dep-actions">
                         <button class="btn btn-secondary btn-sm" onclick="openDeployment('keys')">🔑 一键跳转密钥页</button>
-                        <button class="btn btn-secondary btn-sm" onclick="openDeployment('cloud')">☁️ 生成云端链接</button>
+                        <button class="btn btn-secondary btn-sm" onclick="openDeployment('cloud')">🔐 配置 GitHub Secrets</button>
                         <button class="btn btn-secondary btn-sm" onclick="openDeployment('env')">📦 导出 .env</button>
                     </div>
                 </div>
@@ -892,7 +892,7 @@
             <div id="deployment-section" class="deployment-section" style="display: none;">
                 <div class="deployment-tabs">
                     <button class="cloud-preset-btn" id="dep-tab-keys" onclick="switchDeploymentTab('keys')">🔑 跳转密钥页</button>
-                    <button class="cloud-preset-btn" id="dep-tab-cloud" onclick="switchDeploymentTab('cloud')">☁️ 生成云端链接</button>
+                    <button class="cloud-preset-btn" id="dep-tab-cloud" onclick="switchDeploymentTab('cloud')">🔐 配置 Secrets</button>
                     <button class="cloud-preset-btn" id="dep-tab-env" onclick="switchDeploymentTab('env')">📦 导出 .env</button>
                 </div>
 
@@ -916,31 +916,23 @@
                     </div>
                 </div>
 
-                <!-- (B) 生成云端配置链接 -->
+                <!-- (B) 一键配置 GitHub Secrets -->
                 <div id="dep-panel-cloud" class="deployment-panel" style="display: none;">
                     <p style="color: rgba(255,255,255,0.65); font-size: 13px; margin-top: 0;">
-                        将当前账号配置打包成可直接喂给 checkin.py 的 <code>CONFIG_URL</code> 链接（零后端改动）。
+                        生成本页账号配置的单行 JSON，复制后直接跳转到 GitHub 仓库 Secrets 页面手动添加为 <code>NEWAPI_ACCOUNTS</code>。
                     </p>
-                    <div class="form-group">
-                        <label>编码格式</label>
-                        <select id="dep-cloud-format">
-                            <option value="base64">Base64 文本（推荐：贴 GitHub Gist raw / 对象存储，CI 稳）</option>
-                            <option value="dataurl">data URL（本地便捷测试用，直接贴 <code>CONFIG_URL</code>）</option>
-                            <option value="rawjson">原始 JSON（自建 WebDAV/对象存储直接存）</option>
-                        </select>
-                    </div>
                     <div class="dep-output">
-                        <button class="btn btn-secondary copy-btn" onclick="copyCloudOutput(event)">复制</button>
+                        <button class="btn btn-secondary copy-btn" onclick="copyAccountsJson(event)">复制 JSON</button>
+                        <button class="btn btn-success btn-sm" onclick="openGitHubSecrets()">🔑 跳转 GitHub Secrets ↗</button>
                         <pre id="dep-cloud-output"></pre>
                     </div>
                     <div class="tips">
-                        <h4>💡 用法</h4>
+                        <h4>💡 步骤</h4>
                         <ul>
-                            <li><strong>Base64：</strong>复制下方文本 → 新建 GitHub Gist（或任意可匿名 GET 的 raw 文件托管）→ 取 raw URL 填入 GitHub Secret <code>CONFIG_URL</code>，<code>CONFIG_AUTH</code> 留空</li>
-                            <li><strong>原始 JSON：</strong>把 JSON 存到 WebDAV/对象存储，URL 填 <code>CONFIG_URL</code>，<code>CONFIG_AUTH</code> 按 <code>user:password</code> 或 <code>token:xxx</code> 填</li>
-                            <li><strong>data URL：</strong>仅本地便捷用直接贴 <code>CONFIG_URL</code>；CI 环境请用 Base64（<code>requests</code> 不支持 <code>data:</code> scheme）</li>
-                            <li>云端账号配置优先级高于 <code>NEWAPI_ACCOUNTS</code> 环境变量</li>
-                            <li>本页只生成账号配置；钉钉 / 邮件 / ServerChan 通知请在 GitHub Secrets 里单独配（见上方 .env 导出页的占位变量名）</li>
+                            <li>点「复制 JSON」拿到单行 JSON 文本</li>
+                            <li>点「跳转 GitHub Secrets」打开仓库 Settings → Secrets and variables → Actions</li>
+                            <li>点 <code>New repository secret</code> → 名字填 <code>NEWAPI_ACCOUNTS</code> → 值粘贴上一步复制的内容 → 保存</li>
+                            <li>邮件 / 钉钉 / ServerChan 通知也用同样方式新增对应 Secret（见「📦 导出 .env」里的变量名）</li>
                         </ul>
                     </div>
                 </div>
@@ -1581,38 +1573,24 @@
             copyText(text, ev && ev.target);
         }
 
-        // === (B) 云端链接 ===
-        // 只打包账号配置（本页不收集钉钉/邮件/ServerChan 通知配置，那些在 GitHub Secrets 单独配）
-        function buildCloudConfig() {
-            const accounts = readGeneratedAccounts();
-            if (!accounts) return null;
-            return { accounts: accounts };
-        }
-
+        // === (B) 一键配置 GitHub Secrets：生成单行 JSON + 跳转 Secrets 页 ===
         function renderCloudOutput() {
             const accounts = readGeneratedAccounts();
             const out = document.getElementById('dep-cloud-output');
             if (!accounts) { out.textContent = '⚠️ 请先生成配置'; return; }
-            const fmt = document.getElementById('dep-cloud-format').value;
-            const cfg = buildCloudConfig();
-            const json = JSON.stringify(cfg);
-            let result = '';
-            if (fmt === 'rawjson') {
-                result = JSON.stringify(cfg, null, 2);
-            } else if (fmt === 'base64') {
-                // UTF-8 安全 base64
-                result = btoa(unescape(encodeURIComponent(json)));
-            } else if (fmt === 'dataurl') {
-                const b64 = btoa(unescape(encodeURIComponent(json)));
-                result = 'data:application/json;base64,' + b64;
-            }
-            out.textContent = result;
+            out.textContent = JSON.stringify(accounts); // 单行 JSON
         }
 
-        function copyCloudOutput(ev) {
+        function copyAccountsJson(ev) {
             const text = document.getElementById('dep-cloud-output').textContent;
             if (!text || text.startsWith('⚠️')) { alert('请先生成配置'); return; }
             copyText(text, ev && ev.target);
+        }
+
+        function openGitHubSecrets() {
+            // 跳转到本仓库的 Actions Secrets 设置页
+            const url = 'https://github.com/Qiscard/Newapi-checkin/settings/secrets/actions';
+            window.open(url, '_blank', 'noopener');
         }
 
         // === (C) .env 导出 ===
@@ -1705,7 +1683,6 @@
 
         // 监听下拉/复选框变化，实时刷新输出
         document.addEventListener('change', (e) => {
-            if (e.target && e.target.id === 'dep-cloud-format') renderCloudOutput();
             if (e.target && (e.target.id === 'dep-env-dingtalk' || e.target.id === 'dep-env-email' || e.target.id === 'dep-env-serverchan')) renderEnvOutput();
         });
 
