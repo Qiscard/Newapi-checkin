@@ -164,23 +164,23 @@ def send_email_notification(results: List[Dict[str, Any]], execution_time: Optio
     发送邮件通知
 
     环境变量配置:
-        EMAIL_SMTP_HOST: SMTP 服务器地址
-        EMAIL_SMTP_PORT: SMTP 服务器端口 (默认 465)
-        EMAIL_USER: SMTP 用户名
-        EMAIL_PASS: SMTP 密码/授权码
-        EMAIL_TO: 收件人地址
-        EMAIL_FROM: 发件人地址 (可选，默认与 EMAIL_USER 相同)
+        SMTP_HOST: SMTP 服务器地址
+        SMTP_PORT: SMTP 服务器端口 (默认 465)
+        SMTP_USER: SMTP 用户名
+        SMTP_PASS: SMTP 密码/授权码
+        SMTP_TO: 收件人地址
+        SMTP_FROM: 发件人地址 (可选，默认与 SMTP_USER 相同)
     """
-    host = os.environ.get('EMAIL_SMTP_HOST', '')
-    port_str = os.environ.get('EMAIL_SMTP_PORT', '465')
+    host = os.environ.get('SMTP_HOST', '')
+    port_str = os.environ.get('SMTP_PORT', '465')
     port = int(port_str) if port_str else 465
-    user = os.environ.get('EMAIL_USER', '')
-    password = os.environ.get('EMAIL_PASS', '')
-    to_addr = os.environ.get('EMAIL_TO', '')
-    from_addr = os.environ.get('EMAIL_FROM', user)
+    user = os.environ.get('SMTP_USER', '')
+    password = os.environ.get('SMTP_PASS', '')
+    to_addr = os.environ.get('SMTP_TO', '')
+    from_addr = os.environ.get('SMTP_FROM', user)
 
     if not all([host, user, password, to_addr]):
-        print('[邮件通知] 未完整配置邮件参数 (EMAIL_SMTP_HOST/USER/PASS/TO)，跳过通知')
+        print('[邮件通知] 未完整配置邮件参数 (SMTP_HOST/USER/PASS/TO)，跳过通知')
         return False
 
     if not execution_time:

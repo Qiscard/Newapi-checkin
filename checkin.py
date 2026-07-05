@@ -554,18 +554,18 @@ def load_config_from_cloud(config_url: str, config_auth: str = None) -> Optional
 
             if data.get('email'):
                 em = data['email']
-                if em.get('smtp_host') and not os.environ.get('EMAIL_SMTP_HOST'):
-                    os.environ['EMAIL_SMTP_HOST'] = em['smtp_host']
-                if em.get('smtp_port') and not os.environ.get('EMAIL_SMTP_PORT'):
-                    os.environ['EMAIL_SMTP_PORT'] = str(em['smtp_port'])
-                if em.get('user') and not os.environ.get('EMAIL_USER'):
-                    os.environ['EMAIL_USER'] = em['user']
-                if em.get('pass') and not os.environ.get('EMAIL_PASS'):
-                    os.environ['EMAIL_PASS'] = em['pass']
-                if em.get('to') and not os.environ.get('EMAIL_TO'):
-                    os.environ['EMAIL_TO'] = em['to']
-                if em.get('from_addr') and not os.environ.get('EMAIL_FROM'):
-                    os.environ['EMAIL_FROM'] = em['from_addr']
+                if em.get('smtp_host') and not os.environ.get('SMTP_HOST'):
+                    os.environ['SMTP_HOST'] = em['smtp_host']
+                if em.get('smtp_port') and not os.environ.get('SMTP_PORT'):
+                    os.environ['SMTP_PORT'] = str(em['smtp_port'])
+                if em.get('user') and not os.environ.get('SMTP_USER'):
+                    os.environ['SMTP_USER'] = em['user']
+                if em.get('pass') and not os.environ.get('SMTP_PASS'):
+                    os.environ['SMTP_PASS'] = em['pass']
+                if em.get('to') and not os.environ.get('SMTP_TO'):
+                    os.environ['SMTP_TO'] = em['to']
+                if em.get('from_addr') and not os.environ.get('SMTP_FROM'):
+                    os.environ['SMTP_FROM'] = em['from_addr']
                 if em.get('smtp_host'):
                     print('[云端] 已从云端加载邮件通知配置')
 
@@ -808,10 +808,10 @@ def main():
         print('[警告] 已配置 DINGTALK_WEBHOOK 但无法导入通知模块')
 
     # 发送邮件通知
-    if send_email_notification and os.environ.get('EMAIL_SMTP_HOST'):
+    if send_email_notification and os.environ.get('SMTP_HOST'):
         print('正在发送邮件通知...')
         send_email_notification(checkin_results, execution_time)
-    elif os.environ.get('EMAIL_SMTP_HOST'):
+    elif os.environ.get('SMTP_HOST'):
         print('[警告] 已配置邮件参数但无法导入通知模块')
 
     # 发送 ServerChan 通知
