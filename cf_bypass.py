@@ -174,7 +174,11 @@ class CloudflareBypasser:
                     print('[CF 绕过] CF 验证已通过，准备执行签到...')
 
                 if self.user_id:
-                    page.evaluate(f'() => localStorage.setItem("user", JSON.stringify({{"id": {self.user_id}}}))')
+                    user_id = int(self.user_id) if str(self.user_id).isdigit() else str(self.user_id)
+                    page.evaluate(
+                        '(userId) => localStorage.setItem("user", JSON.stringify({id: userId}))',
+                        user_id,
+                    )
 
                 try:
                     user_text = page.evaluate('() => localStorage.getItem("user")')

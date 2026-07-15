@@ -23,6 +23,9 @@ jobs:
       - name: 安装依赖
         run: pip install -r requirements.txt
 
+      - name: 运行单元测试
+        run: python -m unittest discover -s tests -v
+
       - name: 安装 Playwright 浏览器
         run: playwright install chromium --with-deps
 

@@ -3,1690 +3,581 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NewAPI 配置生成器</title>
+    <title>NewAPI 签到配置</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            color-scheme: light;
+            --bg: #f4f6f8;
+            --surface: #ffffff;
+            --surface-muted: #f8fafb;
+            --text: #17212b;
+            --muted: #5f6b76;
+            --border: #d7dde3;
+            --primary: #087f6d;
+            --primary-hover: #066758;
+            --danger: #c93434;
+            --focus: #80c9bd;
+            --code: #101820;
         }
+
+        * { box-sizing: border-box; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            min-height: 100vh;
-            padding: 20px;
-            position: relative;
-            overflow-x: hidden;
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Inter, "Segoe UI", "Microsoft YaHei", sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
         }
 
-        body::before {
-            content: '';
-            position: fixed;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 30% 40%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
-                        radial-gradient(circle at 70% 60%, rgba(139, 92, 246, 0.06) 0%, transparent 50%);
-            animation: bgFloat 20s ease-in-out infinite;
-            pointer-events: none;
+        button, input, textarea { font: inherit; }
+
+        button:focus-visible, input:focus-visible, textarea:focus-visible {
+            outline: 3px solid var(--focus);
+            outline-offset: 1px;
         }
 
-        @keyframes bgFloat {
-            0%, 100% { transform: translate(0, 0); }
-            50% { transform: translate(2%, -2%); }
+        .app-header {
+            background: #1e2933;
+            color: #fff;
+            border-bottom: 4px solid var(--primary);
         }
 
-        .container {
-            max-width: 800px;
+        .header-inner, .workspace {
+            width: min(1120px, calc(100% - 32px));
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 24px;
-            overflow: hidden;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5), 0 0 120px rgba(99, 102, 241, 0.1);
-            animation: containerIn 0.8s ease-out;
         }
 
-        @keyframes containerIn {
-            from { opacity: 0; transform: translateY(30px) scale(0.97); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        .header {
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
-            color: white;
-            padding: 40px 35px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-            animation: pulse 8s ease-in-out infinite;
-        }
-
-        .header::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 40px;
-            background: linear-gradient(to top, rgba(26, 26, 46, 0.3), transparent);
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.05); opacity: 0.8; }
-        }
-
-        .header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-            position: relative;
-            letter-spacing: -0.5px;
-        }
-
-        .header p {
-            opacity: 0.9;
-            font-size: 15px;
-            position: relative;
-            line-height: 1.5;
-        }
-
-        .back-link {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: white;
-            text-decoration: none;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 1;
-            padding: 8px 16px;
-            background: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            border-radius: 10px;
-            backdrop-filter: blur(10px);
-        }
-
-        .back-link:hover {
-            background: rgba(255, 255, 255, 0.25);
-            border-color: rgba(255, 255, 255, 0.4);
-            transform: translateX(-3px);
-            box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
-        }
-
-        .back-link:active {
-            transform: translateX(-3px) scale(0.97);
-        }
-
-        .content {
-            padding: 30px 35px;
-            color: rgba(255, 255, 255, 0.85);
-        }
-
-        .notice {
-            background: rgba(99, 102, 241, 0.1);
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            color: #a78bfa;
-            padding: 15px 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            animation: noticeIn 0.5s ease-out;
-        }
-
-
-        @keyframes noticeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .site-card {
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-            margin-bottom: 24px;
-            background: rgba(255, 255, 255, 0.04);
-            transition: all 0.3s ease;
-            animation: cardIn 0.4s ease-out backwards;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .site-card::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(99, 102, 241, 0.08) 0%, transparent 60%);
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .site-card:hover::before {
-            opacity: 1;
-        }
-
-        .site-card:hover {
-            border-color: rgba(99, 102, 241, 0.2);
-        }
-
-        @keyframes cardIn {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .site-header {
+        .header-inner {
+            min-height: 72px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 18px 24px;
-            background: rgba(99, 102, 241, 0.06);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            gap: 20px;
         }
 
-        .site-title {
-            color: #a78bfa;
-            font-size: 18px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        h1 { margin: 0; font-size: 22px; font-weight: 700; }
+        .subtitle { margin: 3px 0 0; color: #cbd5dd; }
 
-        .site-title::before {
-            content: '';
-            display: inline-block;
-            width: 4px;
-            height: 18px;
-            background: #6366f1;
-            border-radius: 2px;
-        }
+        .workspace { padding: 24px 0 48px; }
 
-        .site-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .site-body {
-            padding: 20px 24px;
-        }
-
-        .site-site-fields {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 16px;
-            margin-bottom: 20px;
-        }
-
-        .site-site-fields .form-group {
-            margin-bottom: 0;
-        }
-
-        .accounts-divider {
-            border: none;
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
-            margin: 0 0 16px;
-        }
-
-        .accounts-label {
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 13px;
-            margin-bottom: 12px;
-            font-weight: 500;
-        }
-
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: rgba(255, 255, 255, 0.75);
-            font-weight: 500;
-            font-size: 14px;
-        }
-
-        .form-group label .required {
-            color: #f56565;
-            font-size: 12px;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            font-size: 14px;
-            transition: all 0.3s;
-            background: rgba(255, 255, 255, 0.06);
-            color: rgba(255, 255, 255, 0.9);
-            outline: none;
-        }
-
-        .url-input-wrapper {
-            position: relative;
-        }
-
-        .url-input-wrapper input {
-            padding-right: 42px;
-        }
-
-        .url-jump-btn {
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(99, 102, 241, 0.15);
-            border: 1px solid rgba(99, 102, 241, 0.25);
-            color: #a78bfa;
-            width: 28px;
-            height: 28px;
-            border-radius: 7px;
-            cursor: pointer;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-            line-height: 1;
-        }
-
-        .url-jump-btn:hover {
-            background: rgba(99, 102, 241, 0.3);
-            border-color: rgba(99, 102, 241, 0.5);
-            color: #c4b5fd;
-            transform: translateY(-50%) scale(1.1);
-        }
-
-        .url-jump-btn:active {
-            transform: translateY(-50%) scale(0.95);
-        }
-
-        .form-group input::placeholder {
-            color: rgba(255, 255, 255, 0.3);
-        }
-
-        .form-group input:focus {
-            border-color: #6366f1;
-            background: rgba(99, 102, 241, 0.08);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-        }
-
-        .form-group small {
-            color: rgba(255, 255, 255, 0.45);
-            font-size: 12px;
-            margin-top: 6px;
-            display: block;
-            line-height: 1.5;
-        }
-
-        .account-item {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            position: relative;
-            transition: all 0.3s ease;
-            animation: accIn 0.3s ease-out backwards;
-        }
-
-        @keyframes accIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .account-item:hover {
-            border-color: rgba(99, 102, 241, 0.15);
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .account-item-header {
+        .toolbar, .section-heading, .account-heading, .result-heading {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 12px;
-        }
-
-        .account-item-title {
-            color: rgba(255, 255, 255, 0.65);
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .account-fields {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr;
             gap: 12px;
+            flex-wrap: wrap;
         }
 
-        .account-fields .form-group {
-            margin-bottom: 0;
+        .toolbar {
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
         }
+
+        .toolbar-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .result-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
         .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 12px;
+            min-height: 38px;
+            padding: 8px 13px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--surface);
+            color: var(--text);
             cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            position: relative;
-            overflow: hidden;
+            font-weight: 600;
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            color: white;
-            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
-        }
+        .btn:hover { background: #edf2f5; }
+        .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-danger { color: var(--danger); border-color: #efb7b7; }
+        .btn-small { min-height: 32px; padding: 5px 10px; font-size: 13px; }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.4);
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, #059669 0%, #34d399 100%);
-            color: white;
-            box-shadow: 0 4px 16px rgba(5, 150, 105, 0.3);
-        }
-
-        .btn-success:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(5, 150, 105, 0.4);
-        }
-
-        .btn-danger {
-            background: rgba(245, 101, 101, 0.15);
-            border: 1px solid rgba(245, 101, 101, 0.3);
-            color: #f56565;
-            font-size: 13px;
-            padding: 6px 14px;
-        }
-
-        .btn-danger:hover {
-            background: rgba(245, 101, 101, 0.25);
-            border-color: rgba(245, 101, 101, 0.5);
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.75);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.12);
-            border-color: rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
-            color: rgba(255, 255, 255, 0.9);
-        }
-
-        .btn-sm {
-            padding: 8px 16px;
-            font-size: 13px;
-            border-radius: 8px;
-        }
-
-        .btn-xs {
-            padding: 6px 14px;
-            font-size: 13px;
-            border-radius: 8px;
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 12px;
-            margin-top: 24px;
-            flex-wrap: wrap;
-        }
-
-        .add-account-row {
-            display: flex;
-            justify-content: center;
-            padding: 4px 0 0;
-        }
-
-        .cloud-preset-btn {
-            padding: 8px 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 500;
-            transition: all 0.3s;
-            background: rgba(255, 255, 255, 0.06);
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .cloud-preset-btn:hover {
-            background: rgba(52, 211, 153, 0.15);
-            border-color: rgba(52, 211, 153, 0.3);
-            color: #34d399;
-        }
-
-        .cloud-preset-btn.active {
-            background: rgba(52, 211, 153, 0.2);
-            border-color: rgba(52, 211, 153, 0.4);
-            color: #34d399;
-        }
-
-        .import-section {
+        .site-section {
             margin-top: 20px;
-            padding: 24px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            border-radius: 16px;
-            animation: importIn 0.4s ease-out;
+            padding: 20px 0 4px;
+            border-top: 2px solid #9aa7b2;
         }
 
-        @keyframes importIn {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
+        .site-section:first-child { border-top: 0; padding-top: 4px; }
+        .section-heading h2, .result-heading h2 { margin: 0; font-size: 18px; }
+
+        .site-fields {
+            display: grid;
+            grid-template-columns: minmax(260px, 2fr) minmax(220px, 1fr);
+            gap: 12px;
+            margin-top: 14px;
         }
 
-        .import-section h3 {
-            color: #a78bfa;
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 4px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .field { min-width: 0; }
+        .field label { display: block; margin-bottom: 5px; font-weight: 600; color: #36434e; }
+        .field small { display: block; color: var(--muted); margin-top: 4px; }
 
-        .import-section h3::before {
-            content: '';
-            display: inline-block;
-            width: 4px;
-            height: 18px;
-            background: #6366f1;
-            border-radius: 2px;
-        }
-
-        .import-textarea {
+        input, textarea {
             width: 100%;
-            min-height: 160px;
-            padding: 14px 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            font-size: 13px;
-            font-family: 'Courier New', monospace;
-            background: rgba(30, 30, 50, 0.6);
-            color: rgba(255, 255, 255, 0.9);
-            outline: none;
-            transition: all 0.3s;
-            resize: vertical;
-            line-height: 1.6;
+            border: 1px solid #b9c3cc;
+            border-radius: 5px;
+            background: #fff;
+            color: var(--text);
+            padding: 9px 10px;
         }
 
-        .import-textarea::placeholder {
-            color: rgba(255, 255, 255, 0.3);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        input { min-height: 40px; }
+        textarea { min-height: 230px; resize: vertical; font-family: Consolas, monospace; }
+
+        .accounts { margin-top: 18px; border: 1px solid var(--border); }
+
+        .account-row {
+            padding: 15px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
         }
 
-        .import-textarea:focus {
-            border-color: #6366f1;
-            background: rgba(30, 30, 50, 0.8);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        .account-row:last-child { border-bottom: 0; }
+        .account-heading { margin-bottom: 12px; }
+        .account-heading strong { font-size: 14px; }
+
+        .account-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
         }
 
-        .result-section {
-            margin-top: 32px;
-            padding: 24px;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            animation: resultIn 0.5s ease-out;
-        }
+        .span-2 { grid-column: span 2; }
+        .site-actions { margin-top: 10px; }
 
-        @keyframes resultIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .result-section h3 {
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 18px;
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .code-block {
-            background: rgba(30, 30, 50, 0.8);
-            color: #34d399;
-            padding: 18px;
-            border-radius: 12px;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-            overflow-x: auto;
-            margin-bottom: 12px;
-            position: relative;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-        }
-
-        .code-block pre {
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-
-        .copy-btn {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            padding: 6px 14px;
-            font-size: 12px;
-            border-radius: 8px;
-            z-index: 1;
-        }
-
-        .tabs {
+        .generate-bar {
+            position: sticky;
+            bottom: 0;
+            z-index: 5;
             display: flex;
-            gap: 8px;
-            margin-bottom: 18px;
-            background: rgba(255, 255, 255, 0.03);
-            padding: 4px;
-            border-radius: 12px;
+            justify-content: flex-end;
+            padding: 14px 0;
+            margin-top: 20px;
+            background: rgba(244, 246, 248, 0.96);
+            border-top: 1px solid var(--border);
         }
 
-        .tab {
-            padding: 10px 20px;
-            border: none;
-            background: transparent;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.6);
-            transition: all 0.3s;
+        .generate-bar .btn { min-width: 180px; }
+
+        .result {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid var(--primary);
         }
 
-        .tab:hover {
-            color: rgba(255, 255, 255, 0.85);
-            background: rgba(255, 255, 255, 0.06);
-        }
+        .result[hidden] { display: none; }
+        .result-meta { margin: 4px 0 12px; color: var(--muted); }
 
-        .tab.active {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            color: white;
-            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
-        }
-
-        .tab-content {
-            display: none;
-            animation: tabIn 0.3s ease-out;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        @keyframes tabIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .tips {
-            background: rgba(245, 158, 11, 0.08);
-            border: 1px solid rgba(245, 158, 11, 0.2);
-            border-left: 3px solid #f59e0b;
-            padding: 18px 20px;
-            margin-top: 24px;
-            border-radius: 12px;
-        }
-
-        .tips h4 {
-            color: #fbbf24;
-            margin-bottom: 12px;
-            font-size: 15px;
-            font-weight: 600;
-        }
-
-        .tips ul {
-            margin-left: 20px;
-            color: rgba(255, 255, 255, 0.65);
-        }
-
-        .tips li {
-            margin-bottom: 8px;
-            line-height: 1.6;
-            font-size: 13px;
-        }
-
-        .tips code {
-            background: rgba(99, 102, 241, 0.15);
-            color: #a78bfa;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 13px;
-        }
-
-        .footer {
-            text-align: center;
-            padding: 20px 35px;
-            background: rgba(255, 255, 255, 0.02);
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
-            color: rgba(255, 255, 255, 0.4);
-            font-size: 13px;
-        }
-
-        .footer a {
-            color: #a78bfa;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
-        .footer a:hover {
-            color: #c4b5fd;
-        }
-
-        @media (max-width: 768px) {
-            body { padding: 12px; }
-
-            .container { margin: 0; border-radius: 16px; }
-
-            .content { padding: 20px; }
-
-            .header { padding: 30px 20px; }
-
-            .header h1 { font-size: 24px; }
-
-            .btn-group { flex-direction: column; }
-
-            .btn-group .btn { width: 100%; justify-content: center; }
-
-            .site-body { padding: 16px; }
-
-            .site-header { padding: 14px 16px; }
-
-            .site-site-fields { grid-template-columns: 1fr; }
-
-            .account-fields { grid-template-columns: 1fr; }
-
-            .account-item { padding: 12px; }
-
-            .back-link { display: none; }
-        }
-        @keyframes scaleIn {
-            from { transform: scale(0.95); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-
-        /* === 部署便捷功能区 (新增) === */
-        .result-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .result-header h3 { margin: 0; }
-        .dep-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 0; }
-
-        .deployment-section {
-            margin-top: 24px;
-            animation: scaleIn 0.3s ease;
-        }
-        .deployment-tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-        }
-        .deployment-panel {
-            margin-top: 0;
-            padding: 18px 20px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-        }
-        .deployment-panel h4 { margin-top: 18px; margin-bottom: 8px; }
-        .deployment-panel .tips { margin-top: 14px; }
-
-        .key-card {
-            padding: 12px 14px;
-            margin-bottom: 10px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 10px;
-        }
-        .key-card .key-card-head {
-            display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;
-        }
-        .key-card .key-card-name { font-weight: 600; word-break: break-all; }
-        .key-card .key-card-url { color: rgba(255,255,255,0.55); font-size: 12px; word-break: break-all; margin-top: 4px; }
-        .key-card .key-card-controls { display: flex; gap: 6px; flex-wrap: wrap; }
-
-        .dep-output {
-            position: relative;
-            margin-top: 12px;
-        }
-        .dep-output pre {
+        pre {
             margin: 0;
-            white-space: pre-wrap;
-            word-break: break-all;
-            max-height: 280px;
+            padding: 16px;
+            max-height: 430px;
             overflow: auto;
+            border-radius: 6px;
+            background: var(--code);
+            color: #e8eef2;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            font: 13px/1.55 Consolas, "SFMono-Regular", monospace;
         }
 
-        </style>
+        .security-note {
+            margin: 14px 0 0;
+            padding: 10px 12px;
+            border-left: 3px solid #d29a16;
+            background: #fff8df;
+            color: #5c4818;
+        }
+
+        dialog {
+            width: min(680px, calc(100% - 32px));
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0;
+            box-shadow: 0 18px 50px rgba(15, 23, 42, 0.22);
+        }
+
+        dialog::backdrop { background: rgba(15, 23, 42, 0.55); }
+        .dialog-body { padding: 20px; }
+        .dialog-body h2 { margin: 0 0 14px; font-size: 18px; }
+        .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+
+        .toast {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            z-index: 20;
+            max-width: min(420px, calc(100% - 40px));
+            padding: 11px 14px;
+            border-radius: 6px;
+            background: #17212b;
+            color: #fff;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.24);
+        }
+
+        .toast[hidden] { display: none; }
+
+        @media (max-width: 820px) {
+            .site-fields, .account-grid { grid-template-columns: 1fr; }
+            .span-2 { grid-column: auto; }
+            .header-inner { align-items: flex-start; padding: 15px 0; flex-direction: column; }
+        }
+
+        @media (max-width: 520px) {
+            .header-inner, .workspace { width: min(100% - 20px, 1120px); }
+            .toolbar-group, .toolbar-group .btn, .generate-bar .btn { width: 100%; }
+            .generate-bar { padding-bottom: 10px; }
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <a href="index.html" class="back-link">← 返回首页</a>
-            <h1>🚀 NewAPI 配置生成器</h1>
-            <p>轻松生成多账号签到配置，同站点多账号只需填写一次 URL</p>
+    <header class="app-header">
+        <div class="header-inner">
+            <div>
+                <h1>NewAPI 签到配置</h1>
+                <p class="subtitle">生成后自动复制 JSON，并保存到当前浏览器。</p>
+            </div>
         </div>
+    </header>
 
-        <div class="content">
-            <div id="sites-container"></div>
-
-            <div class="btn-group">
-                <button class="btn btn-primary" onclick="addSite()">➕ 添加站点</button>
-                <button class="btn btn-success" onclick="generateConfig()">✨ 生成配置</button>
+    <main class="workspace">
+        <div class="toolbar">
+            <div class="toolbar-group">
+                <button class="btn" type="button" onclick="addSite()">添加站点</button>
+                <button class="btn" type="button" onclick="openImport()">导入 JSON</button>
             </div>
-
-            <div class="btn-group" style="margin-top: 12px;">
-                <button class="btn btn-secondary" onclick="saveToLocal()">💾 保存到本地</button>
-                <button class="btn btn-secondary" onclick="loadFromLocal()">📂 从本地加载</button>
-                <button class="btn btn-secondary" onclick="toggleImport()" style="color: #a78bfa; border-color: rgba(167,139,250,0.3);">📋 导入 JSON</button>
-                <a href="https://github.com/Qiscard/Newapi-checkin/settings/secrets/actions" target="_blank" rel="noopener" class="btn btn-secondary" style="color: #a78bfa; border-color: rgba(167,139,250,0.3); text-decoration: none;">🔑 Secrets 设置 ↗</a>
-                <button class="btn btn-secondary" onclick="clearLocal()" style="color: #f56565; border-color: rgba(245,101,101,0.3);">🗑️ 清除本地数据</button>
-            </div>
-
-            <div id="import-section" class="import-section" style="display: none;">
-                <h3>📋 导入 JSON 配置</h3>
-                <p style="color: rgba(255,255,255,0.6); font-size: 14px; margin-bottom: 16px;">粘贴已有的 JSON 配置，一键导入并按站点自动分组填充表单</p>
-                <textarea id="import-json" class="import-textarea" placeholder='粘贴 JSON 配置，例如：
-[
-  {
-    "url": "https://api.example.com",
-    "session": "MTc2NzQxMzYzM3...",
-    "user_id": "123",
-    "name": "主力站",
-    "cf_clearance": "xxsCgaPMM..."
-  }
-]'></textarea>
-                <div class="btn-group" style="margin-top: 12px;">
-                    <button class="btn btn-primary btn-sm" onclick="importJSON()">✅ 确认导入</button>
-                    <button class="btn btn-secondary btn-sm" onclick="toggleImport()">取消</button>
-                </div>
-            </div>
-
-            <div class="tips" style="margin-top: 24px;">
-                <h4>💡 使用提示：</h4>
-                <ul>
-                    <li><strong>站点分组：</strong>同一站点的 URL 和 CF Clearance 只需填写一次，站点下可添加多个账号</li>
-                    <li><strong>账号信息：</strong>每个账号只需填写 Session、用户ID 和备注名称</li>
-                    <li><strong>保存到本地：</strong>将配置保存到浏览器本地存储，下次访问自动加载</li>
-                    <li><strong>明文存储：</strong>数据以明文形式存储在浏览器中，请注意安全</li>
-                </ul>
-            </div>
-
-            <div id="result" class="result-section" style="display: none;">
-                <div class="result-header">
-                    <h3>📋 生成的配置</h3>
-                    <div class="dep-actions">
-                        <button class="btn btn-secondary btn-sm" onclick="openDeployment('keys')">🔑 一键跳转密钥页</button>
-                        <button class="btn btn-secondary btn-sm" onclick="openDeployment('cloud')">🔐 配置 GitHub Secrets</button>
-                        <button class="btn btn-secondary btn-sm" onclick="openDeployment('env')">📦 导出 .env</button>
-                    </div>
-                </div>
-
-                <div class="tabs">
-                    <button class="tab active" onclick="switchTab('json')">JSON 格式（推荐）</button>
-                    <button class="tab" onclick="switchTab('simple')">简单格式</button>
-                </div>
-
-                <div id="json-tab" class="tab-content active">
-                    <div class="code-block">
-                        <button class="btn btn-secondary copy-btn" onclick="copyToClipboard('json')">复制</button>
-                        <pre id="json-output"></pre>
-                    </div>
-                </div>
-
-                <div id="simple-tab" class="tab-content">
-                    <div class="code-block">
-                        <button class="btn btn-secondary copy-btn" onclick="copyToClipboard('simple')">复制</button>
-                        <pre id="simple-output"></pre>
-                    </div>
-                </div>
-
-                <div class="tips">
-                    <h4>💡 使用方法：</h4>
-                    <ul>
-                        <li><strong>GitHub Actions：</strong>复制上面的配置，在仓库的 Settings → Secrets → New repository secret 中添加名为 <code>NEWAPI_ACCOUNTS</code> 的 Secret</li>
-                        <li><strong>本地运行：</strong>将配置设置为环境变量 <code>NEWAPI_ACCOUNTS</code></li>
-                        <li><strong>格式推荐：</strong>JSON 格式支持备注，更易于管理多个站点</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- === 部署便捷功能区 (新增) === -->
-            <div id="deployment-section" class="deployment-section" style="display: none;">
-                <div class="deployment-tabs">
-                    <button class="cloud-preset-btn" id="dep-tab-keys" onclick="switchDeploymentTab('keys')">🔑 跳转密钥页</button>
-                    <button class="cloud-preset-btn" id="dep-tab-cloud" onclick="switchDeploymentTab('cloud')">🔐 配置 Secrets</button>
-                    <button class="cloud-preset-btn" id="dep-tab-env" onclick="switchDeploymentTab('env')">📦 导出 .env</button>
-                </div>
-
-                <!-- (A) 一键跳转密钥页 -->
-                <div id="dep-panel-keys" class="deployment-panel">
-                    <p style="color: rgba(255,255,255,0.65); font-size: 13px; margin-top: 0;">
-                        为每个 NewAPI 站点生成「令牌/密钥」页 URL。各 NewAPI 二开站路径不统一，已按命中概率预填候选，可下拉切换；选中后点「打开」用浏览器当前登录态跳转。
-                    </p>
-                    <div id="dep-keys-list"></div>
-                    <div class="dep-actions" style="margin-top: 12px;">
-                        <button class="btn btn-success btn-sm" onclick="openAllKeyPages()">🔗 打开全部密钥页</button>
-                        <button class="btn btn-secondary btn-sm" onclick="copyKeyPages(event)">📋 复制全部 URL</button>
-                    </div>
-                    <div class="tips">
-                        <h4>💡 提示</h4>
-                        <ul>
-                            <li>候选路径按 NewAPI/One API 系默认前端约定排列：<code>/console</code>、<code>/console/personal</code>、<code>/setting</code>、<code>/user/personal</code></li>
-                            <li>新标签页会用浏览器自带 Cookie 打开，可直接看到当前账号的密钥/令牌(即 <code>NEWAPI_ACCOUNTS</code> 里的 session)</li>
-                            <li>站点魔改过前端时，可手动改下拉里的路径</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- (B) 一键配置 GitHub Secrets -->
-                <div id="dep-panel-cloud" class="deployment-panel" style="display: none;">
-                    <p style="color: rgba(255,255,255,0.65); font-size: 13px; margin-top: 0;">
-                        生成本页账号配置的单行 JSON，复制后直接跳转到 GitHub 仓库 Secrets 页面手动添加为 <code>NEWAPI_ACCOUNTS</code>。
-                    </p>
-                    <div class="dep-output">
-                        <button class="btn btn-secondary copy-btn" onclick="copyAccountsJson(event)">复制 JSON</button>
-                        <button class="btn btn-success btn-sm" onclick="openGitHubSecrets()">🔑 跳转 GitHub Secrets ↗</button>
-                        <pre id="dep-cloud-output"></pre>
-                    </div>
-                    <div class="tips">
-                        <h4>💡 步骤</h4>
-                        <ul>
-                            <li>点「复制 JSON」拿到单行 JSON 文本</li>
-                            <li>点「跳转 GitHub Secrets」打开仓库 Settings → Secrets and variables → Actions</li>
-                            <li>点 <code>New repository secret</code> → 名字填 <code>NEWAPI_ACCOUNTS</code> → 值粘贴上一步复制的内容 → 保存</li>
-                            <li>邮件 / 钉钉 / ServerChan 通知也用同样方式新增对应 Secret（见「📦 导出 .env」里的变量名）</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- (C) 导出 .env -->
-                <div id="dep-panel-env" class="deployment-panel" style="display: none;">
-                    <p style="color: rgba(255,255,255,0.65); font-size: 13px; margin-top: 0;">
-                        生成可直接本地使用的 <code>.env</code> 文本。账号走单行 JSON（被 <code>load_env_file</code> 按行读取，多行会被切断，故强制单行）。
-                    </p>
-                    <div class="form-group">
-                        <label><input type="checkbox" id="dep-env-dingtalk" checked> 包含钉钉配置占位</label>
-                    </div>
-                    <div class="form-group">
-                        <label><input type="checkbox" id="dep-env-email" checked> 包含邮件配置占位（SMTP_*）</label>
-                    </div>
-                    <div class="form-group">
-                        <label><input type="checkbox" id="dep-env-serverchan" checked> 包含 ServerChan 配置占位</label>
-                    </div>
-                    <div class="dep-output">
-                        <button class="btn btn-secondary copy-btn" onclick="copyEnvOutput(event)">复制</button>
-                        <button class="btn btn-success btn-sm" onclick="downloadEnvFile()">⬇ 下载 .env</button>
-                        <pre id="dep-env-output"></pre>
-                    </div>
-                    <div class="tips">
-                        <h4>💡 重要</h4>
-                        <ul>
-                            <li><code>NEWAPI_ACCOUNTS=</code> 后<strong>不加外层引号</strong>，<code>load_env_file</code> 不剥引号，加了会让首尾 <code>"</code> 进入 session 导致认证失败</li>
-                            <li>含敏感信息，<strong>勿提交 git</strong>（仓库根 <code>.gitignore</code> 已含 <code>.env</code>）</li>
-                            <li>通知配置默认注释，需用时取消注释并填值</li>
-                        </ul>
-                    </div>
-                </div>
+            <div class="toolbar-group">
+                <button class="btn" id="restore-button" type="button" onclick="restoreLocal()">恢复本地配置</button>
+                <button class="btn btn-danger" type="button" onclick="clearLocal()">清除本地配置</button>
             </div>
         </div>
 
-        <div class="footer">
-            <p>Made with ❤️ by <a href="https://github.com/Jasonliu-0/Newapi-checkin" target="_blank">Jasonliu-0</a></p>
+        <div id="sites-container"></div>
+
+        <div class="generate-bar">
+            <button class="btn btn-primary" type="button" onclick="generateConfig()">生成并复制 JSON</button>
         </div>
-    </div>
+
+        <section class="result" id="result" hidden>
+            <div class="result-heading">
+                <div>
+                    <h2>JSON 配置</h2>
+                    <p class="result-meta" id="result-meta"></p>
+                </div>
+                <div class="result-actions">
+                    <button class="btn btn-small" type="button" onclick="openGitHubSecrets()">打开 GitHub Secrets</button>
+                    <button class="btn btn-small" type="button" onclick="copyGeneratedConfig()">重新复制</button>
+                </div>
+            </div>
+            <pre id="json-output" tabindex="0"></pre>
+            <p class="security-note">本地存储为浏览器明文存储。生成后请将 JSON、SMTP 密码、钉钉密钥等分别保存到 GitHub Actions Secrets，不要提交到仓库。</p>
+        </section>
+    </main>
+
+    <dialog id="import-dialog">
+        <div class="dialog-body">
+            <h2>导入账号 JSON</h2>
+            <textarea id="import-json" spellcheck="false" placeholder='[{"url":"https://api.example.com","session":"..."}]'></textarea>
+            <div class="dialog-actions">
+                <button class="btn" type="button" onclick="closeImport()">取消</button>
+                <button class="btn btn-primary" type="button" onclick="importConfig()">导入</button>
+            </div>
+        </div>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
     <script>
-        let siteCount = 0;
-        const siteAccountCounts = {};
+        const STORAGE_KEY = 'newapi_checkin_accounts';
+        let siteSequence = 0;
+        const accountSequences = new Map();
+        let toastTimer = null;
 
-        window.onload = function() {
+        document.addEventListener('DOMContentLoaded', () => {
             addSite();
-        };
+            const hasLocal = Boolean(localStorage.getItem(STORAGE_KEY));
+            document.getElementById('restore-button').disabled = !hasLocal;
+            if (hasLocal) showToast('发现本地配置，可点击“恢复本地配置”。');
+        });
 
-        function addSite() {
-            siteCount++;
-            siteAccountCounts[siteCount] = 0;
-            const container = document.getElementById('sites-container');
+        function addSite(site = {}) {
+            siteSequence += 1;
+            const siteId = siteSequence;
+            accountSequences.set(siteId, 0);
 
-            const siteCard = document.createElement('div');
-            siteCard.className = 'site-card';
-            siteCard.id = `site-${siteCount}`;
-            siteCard.innerHTML = `
-                <div class="site-header">
-                    <span class="site-title">站点 ${siteCount}</span>
-                    <div class="site-actions">
-                        ${siteCount > 1 ? `<button class="btn btn-danger btn-xs" onclick="removeSite(${siteCount})">删除站点</button>` : ''}
+            const section = document.createElement('section');
+            section.className = 'site-section';
+            section.id = `site-${siteId}`;
+            section.innerHTML = `
+                <div class="section-heading">
+                    <h2>站点 ${siteId}</h2>
+                    <button class="btn btn-danger btn-small" type="button" onclick="removeSite(${siteId})">删除站点</button>
+                </div>
+                <div class="site-fields">
+                    <div class="field">
+                        <label for="site-url-${siteId}">站点 URL</label>
+                        <input id="site-url-${siteId}" type="url" placeholder="https://api.example.com">
+                    </div>
+                    <div class="field">
+                        <label for="site-cf-${siteId}">CF Clearance，可选</label>
+                        <input id="site-cf-${siteId}" type="text" autocomplete="off">
                     </div>
                 </div>
-                <div class="site-body">
-                    <div class="site-site-fields">
-                        <div class="form-group">
-                            <label>站点 URL <span class="required">*</span></label>
-                            <div class="url-input-wrapper">
-                                <input type="text" id="site-url-${siteCount}" placeholder="https://api.example.com">
-                                <button class="url-jump-btn" onclick="jumpToUrl(${siteCount})" title="跳转到该站点">↗</button>
-                            </div>
-                            <small>完整的站点地址，同站点下所有账号共享此 URL</small>
-                        </div>
-                        <div class="form-group">
-                            <label>CF Clearance（可选）</label>
-                            <input type="text" id="site-cfclearance-${siteCount}" placeholder="xxsCgaPMM...">
-                            <small>站点级 Cloudflare 防护 Cookie，同站点共享</small>
-                        </div>
-                    </div>
+                <div class="accounts" id="accounts-${siteId}"></div>
+                <div class="site-actions">
+                    <button class="btn btn-small" type="button" onclick="addAccount(${siteId})">添加账号</button>
+                </div>`;
 
-                    <hr class="accounts-divider">
+            document.getElementById('sites-container').appendChild(section);
+            document.getElementById(`site-url-${siteId}`).value = site.url || '';
+            document.getElementById(`site-cf-${siteId}`).value = site.cf_clearance || '';
 
-                    <div class="accounts-label">账号列表</div>
-                    <div id="site-accounts-${siteCount}"></div>
-
-                    <div class="add-account-row">
-                        <button class="btn btn-primary btn-sm" onclick="addAccountToSite(${siteCount})">➕ 添加账号</button>
-                    </div>
-                </div>
-            `;
-
-            container.appendChild(siteCard);
-            addAccountToSite(siteCount);
+            const accounts = site.accounts && site.accounts.length ? site.accounts : [{}];
+            accounts.forEach(account => addAccount(siteId, account));
         }
 
-        function addAccountToSite(siteId) {
-            siteAccountCounts[siteId]++;
-            const accIdx = siteAccountCounts[siteId];
-            const accountsContainer = document.getElementById(`site-accounts-${siteId}`);
+        function addAccount(siteId, account = {}) {
+            const next = (accountSequences.get(siteId) || 0) + 1;
+            accountSequences.set(siteId, next);
 
-            const accItem = document.createElement('div');
-            accItem.className = 'account-item';
-            accItem.id = `acc-${siteId}-${accIdx}`;
-            accItem.innerHTML = `
-                <div class="account-item-header">
-                    <span class="account-item-title">账号 ${accIdx}</span>
-                    ${accIdx > 1 ? `<button class="btn btn-danger btn-xs" onclick="removeAccountFromSite(${siteId}, ${accIdx})">删除</button>` : ''}
+            const row = document.createElement('div');
+            row.className = 'account-row';
+            row.id = `account-${siteId}-${next}`;
+            row.innerHTML = `
+                <div class="account-heading">
+                    <strong>账号 ${next}</strong>
+                    <button class="btn btn-danger btn-small" type="button" onclick="removeAccount(${siteId}, ${next})">删除</button>
                 </div>
-                <div class="account-fields">
-                    <div class="form-group">
-                        <label>Session <span class="required">*</span></label>
-                        <input type="text" id="acc-session-${siteId}-${accIdx}" placeholder="MTc2NzQxMzYzM3...">
+                <div class="account-grid">
+                    <div class="field span-2">
+                        <label for="session-${siteId}-${next}">Session Cookie</label>
+                        <input id="session-${siteId}-${next}" type="text" autocomplete="off">
                     </div>
-                    <div class="form-group">
-                        <label>用户ID <span class="required">*</span></label>
-                        <input type="text" id="acc-userid-${siteId}-${accIdx}" placeholder="123">
+                    <div class="field">
+                        <label for="user-${siteId}-${next}">用户 ID，可选</label>
+                        <input id="user-${siteId}-${next}" type="text" inputmode="numeric">
                     </div>
-                    <div class="form-group">
-                        <label>备注名称</label>
-                        <input type="text" id="acc-name-${siteId}-${accIdx}" placeholder="主力站 / 备用站">
+                    <div class="field">
+                        <label for="name-${siteId}-${next}">备注名称</label>
+                        <input id="name-${siteId}-${next}" type="text" placeholder="主账号">
                     </div>
-                </div>
-                <div class="account-login-fields" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label>登录账号（可选）</label>
-                        <input type="text" id="acc-login-user-${siteId}-${accIdx}" placeholder="session失效时用于重新获取">
-                        <small style="color: rgba(245, 158, 11, 0.7);">session过期时自动登录</small>
+                    <div class="field">
+                        <label for="login-user-${siteId}-${next}">登录账号，可选</label>
+                        <input id="login-user-${siteId}-${next}" type="text" autocomplete="username">
                     </div>
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label>登录密码（可选）</label>
-                        <input type="password" id="acc-login-pass-${siteId}-${accIdx}" placeholder="留空则不尝试自动登录">
-                        <small style="color: rgba(245, 158, 11, 0.7);">如果没填，session失效直接报错</small>
+                    <div class="field">
+                        <label for="login-pass-${siteId}-${next}">登录密码，可选</label>
+                        <input id="login-pass-${siteId}-${next}" type="password" autocomplete="current-password">
                     </div>
-                </div>
-            `;
+                </div>`;
 
-            accountsContainer.appendChild(accItem);
-        }
-
-        function removeAccountFromSite(siteId, accIdx) {
-            const el = document.getElementById(`acc-${siteId}-${accIdx}`);
-            if (el) {
-                el.style.transition = 'all 0.3s ease';
-                el.style.opacity = '0';
-                el.style.transform = 'translateY(-10px)';
-                setTimeout(() => el.remove(), 300);
-            }
+            document.getElementById(`accounts-${siteId}`).appendChild(row);
+            setValue(`session-${siteId}-${next}`, account.session);
+            setValue(`user-${siteId}-${next}`, account.user_id);
+            setValue(`name-${siteId}-${next}`, account.name);
+            setValue(`login-user-${siteId}-${next}`, account.login_username);
+            setValue(`login-pass-${siteId}-${next}`, account.login_password);
         }
 
         function removeSite(siteId) {
-            const el = document.getElementById(`site-${siteId}`);
-            if (el) {
-                el.style.transition = 'all 0.3s ease';
-                el.style.opacity = '0';
-                el.style.transform = 'translateY(-10px)';
-                setTimeout(() => el.remove(), 300);
+            const sites = document.querySelectorAll('.site-section');
+            if (sites.length === 1) {
+                showToast('至少保留一个站点。');
+                return;
             }
+            document.getElementById(`site-${siteId}`)?.remove();
+            accountSequences.delete(siteId);
         }
 
-        function switchTab(tab) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-
-            if (tab === 'json') {
-                document.querySelector('.tab:nth-child(1)').classList.add('active');
-                document.getElementById('json-tab').classList.add('active');
-            } else {
-                document.querySelector('.tab:nth-child(2)').classList.add('active');
-                document.getElementById('simple-tab').classList.add('active');
+        function removeAccount(siteId, accountId) {
+            const container = document.getElementById(`accounts-${siteId}`);
+            if (container.children.length === 1) {
+                showToast('每个站点至少保留一个账号。');
+                return;
             }
+            document.getElementById(`account-${siteId}-${accountId}`)?.remove();
         }
 
-        function generateConfig() {
+        async function generateConfig() {
+            let accounts;
+            try {
+                accounts = collectAccounts();
+            } catch (error) {
+                showToast(error.message);
+                return;
+            }
+
+            const json = JSON.stringify(accounts, null, 2);
+            document.getElementById('json-output').textContent = json;
+            document.getElementById('result-meta').textContent = `${accounts.length} 个账号，已保存到当前浏览器。`;
+            document.getElementById('result').hidden = false;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts));
+            document.getElementById('restore-button').disabled = false;
+
+            const copied = await copyText(json);
+            showToast(copied ? 'JSON 已生成、保存并复制。' : 'JSON 已生成并保存，请在下方手动复制。');
+            document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function collectAccounts() {
             const accounts = [];
-            const siteCards = document.querySelectorAll('.site-card');
-            let hasError = false;
+            document.querySelectorAll('.site-section').forEach(section => {
+                const siteId = section.id.split('-')[1];
+                let url = valueOf(`site-url-${siteId}`);
+                const clearance = valueOf(`site-cf-${siteId}`);
+                if (!url) throw new Error(`站点 ${siteId} 缺少 URL。`);
+                if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
 
-            siteCards.forEach(card => {
-                if (hasError) return;
-                const siteId = card.id.split('-')[1];
-                const url = document.getElementById(`site-url-${siteId}`).value.trim();
-                const cfClearance = document.getElementById(`site-cfclearance-${siteId}`).value.trim();
+                section.querySelectorAll('.account-row').forEach(row => {
+                    const parts = row.id.split('-');
+                    const accountId = parts[2];
+                    const session = valueOf(`session-${siteId}-${accountId}`);
+                    if (!session) throw new Error(`站点 ${siteId} 的账号 ${accountId} 缺少 Session。`);
 
-                if (!url) {
-                    alert(`站点 ${siteId}: URL 不能为空`);
-                    hasError = true;
-                    return;
-                }
-
-                const fullUrl = url.startsWith('http') ? url : 'https://' + url;
-
-                const accItems = card.querySelectorAll('.account-item');
-                if (accItems.length === 0) {
-                    alert(`站点 ${siteId}: 至少需要添加一个账号`);
-                    hasError = true;
-                    return;
-                }
-
-                accItems.forEach(item => {
-                    if (hasError) return;
-                    const parts = item.id.split('-');
-                    const sId = parts[1];
-                    const aId = parts[2];
-                    const session = document.getElementById(`acc-session-${sId}-${aId}`).value.trim();
-                    const userId = document.getElementById(`acc-userid-${sId}-${aId}`).value.trim();
-                    const name = document.getElementById(`acc-name-${sId}-${aId}`).value.trim();
-                    const loginUser = document.getElementById(`acc-login-user-${sId}-${aId}`)?.value.trim() || '';
-                    const loginPass = document.getElementById(`acc-login-pass-${sId}-${aId}`)?.value.trim() || '';
-
-                    if (!session || !userId) {
-                        alert(`站点 ${siteId} 账号 ${aId}: Session 和 用户ID 不能为空`);
-                        hasError = true;
-                        return;
-                    }
-
-                    const account = {
-                        url: fullUrl,
-                        session: session,
-                        user_id: userId,
-                        name: name || `站点${siteId}-账号${aId}`
-                    };
-
-                    if (cfClearance) {
-                        account.cf_clearance = cfClearance;
-                    }
-
-                    if (loginUser) {
-                        account.login_username = loginUser;
-                    }
-                    if (loginPass) {
-                        account.login_password = loginPass;
-                    }
-
+                    const account = { url, session };
+                    addOptional(account, 'user_id', valueOf(`user-${siteId}-${accountId}`));
+                    addOptional(account, 'name', valueOf(`name-${siteId}-${accountId}`));
+                    addOptional(account, 'cf_clearance', clearance);
+                    addOptional(account, 'login_username', valueOf(`login-user-${siteId}-${accountId}`));
+                    addOptional(account, 'login_password', valueOf(`login-pass-${siteId}-${accountId}`));
                     accounts.push(account);
                 });
             });
-
-            if (hasError || accounts.length === 0) return;
-
-            document.getElementById('json-output').textContent = JSON.stringify(accounts, null, 2);
-            document.getElementById('simple-output').textContent = accounts.map(acc => `${acc.url}#${acc.session}`).join(',');
-
-            document.getElementById('result').style.display = 'block';
-            document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+            return accounts;
         }
 
-        function copyToClipboard(format) {
-            const text = format === 'json'
-                ? document.getElementById('json-output').textContent
-                : document.getElementById('simple-output').textContent;
-
-            const btn = event.target;
-            const originalText = btn.textContent;
-
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text).then(() => {
-                    btn.textContent = '✅ 已复制！';
-                    btn.style.background = 'rgba(5, 150, 105, 0.3)';
-                    btn.style.borderColor = 'rgba(52, 211, 153, 0.5)';
-                    btn.style.color = '#34d399';
-                    setTimeout(() => {
-                        btn.textContent = originalText;
-                        btn.style.background = '';
-                        btn.style.borderColor = '';
-                        btn.style.color = '';
-                    }, 2000);
-                }).catch(() => fallbackCopy(text, btn, originalText));
-            } else {
-                fallbackCopy(text, btn, originalText);
+        function restoreLocal() {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) {
+                showToast('没有可恢复的本地配置。');
+                return;
             }
-        }
-
-        function fallbackCopy(text, btn, originalText) {
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            textarea.style.position = 'fixed';
-            textarea.style.top = '-9999px';
-            textarea.style.left = '-9999px';
-            document.body.appendChild(textarea);
-
             try {
-                textarea.select();
-                textarea.setSelectionRange(0, 99999);
-                const successful = document.execCommand('copy');
-                document.body.removeChild(textarea);
-
-                if (successful) {
-                    btn.textContent = '✅ 已复制！';
-                    btn.style.background = 'rgba(5, 150, 105, 0.3)';
-                    btn.style.color = '#34d399';
-                    setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; btn.style.color = ''; }, 2000);
-                } else {
-                    throw new Error('execCommand failed');
-                }
-            } catch (err) {
-                document.body.removeChild(textarea);
-                const outputElement = document.getElementById(btn.closest('.tab-content').querySelector('pre').id);
-                const selection = window.getSelection();
-                const range = document.createRange();
-                range.selectNodeContents(outputElement);
-                selection.removeAllRanges();
-                selection.addRange(range);
-                btn.textContent = '⚠️ 请手动复制';
-                btn.style.background = 'rgba(245, 158, 11, 0.3)';
-                btn.style.color = '#fbbf24';
-                alert('自动复制失败，已为您选中文本，请按 Ctrl+C 手动复制');
-                setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; btn.style.color = ''; }, 3000);
+                renderAccounts(JSON.parse(raw));
+                showToast('本地配置已恢复。');
+            } catch (error) {
+                showToast(`本地配置无法读取: ${error.message}`);
             }
-        }
-
-        const STORAGE_KEY = 'newapi_checkin_accounts';
-
-        window.addEventListener('load', checkLocalStorage);
-
-        function checkLocalStorage() {
-            const savedData = localStorage.getItem(STORAGE_KEY);
-            if (savedData) {
-                const notice = document.createElement('div');
-                notice.className = 'notice';
-                notice.innerHTML = `<span>💡</span><span>发现本地保存的配置，点击"从本地加载"按钮可恢复。</span>`;
-                document.querySelector('.content').insertBefore(notice, document.querySelector('.content').firstChild);
-            }
-        }
-
-        function collectFormData() {
-            const sites = [];
-            document.querySelectorAll('.site-card').forEach(card => {
-                const siteId = card.id.split('-')[1];
-                const url = document.getElementById(`site-url-${siteId}`).value.trim();
-                const cfClearance = document.getElementById(`site-cfclearance-${siteId}`).value.trim();
-
-                const accs = [];
-                card.querySelectorAll('.account-item').forEach(item => {
-                    const parts = item.id.split('-');
-                    const sId = parts[1];
-                    const aId = parts[2];
-                    accs.push({
-                        session: document.getElementById(`acc-session-${sId}-${aId}`).value.trim(),
-                        userId: document.getElementById(`acc-userid-${sId}-${aId}`).value.trim(),
-                        name: document.getElementById(`acc-name-${sId}-${aId}`).value.trim(),
-                        loginUser: document.getElementById(`acc-login-user-${sId}-${aId}`)?.value.trim() || '',
-                        loginPass: document.getElementById(`acc-login-pass-${sId}-${aId}`)?.value.trim() || ''
-                    });
-                });
-
-                if (url || cfClearance || accs.some(a => a.session || a.userId || a.name)) {
-                    sites.push({ url, cfClearance, accounts: accs });
-                }
-            });
-            return sites;
-        }
-
-        function saveToLocal() {
-            const sites = collectFormData();
-            if (sites.length === 0) { alert('⚠️ 没有可保存的配置'); return; }
-
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(sites));
-                alert(`✅ 成功保存 ${sites.length} 个站点配置到本地！\n\n⚠️ 提示：Session Cookie 以明文形式存储，请注意安全。`);
-            } catch (e) { alert('❌ 保存失败：' + e.message); }
-        }
-
-        function loadFromLocal() {
-            const savedData = localStorage.getItem(STORAGE_KEY);
-            if (!savedData) { alert('⚠️ 没有找到本地保存的配置'); return; }
-
-            try {
-                const data = JSON.parse(savedData);
-                if (Array.isArray(data) && data.length > 0 && data[0].accounts) {
-                    loadGroupedData(data);
-                } else if (Array.isArray(data) && data.length > 0) {
-                    loadFlatData(data);
-                } else {
-                    alert('⚠️ 本地配置格式错误');
-                    return;
-                }
-                alert(`✅ 成功加载 ${document.querySelectorAll('.account-item').length} 个账号配置！`);
-            } catch (e) { alert('❌ 加载失败：' + e.message); }
-        }
-
-        function loadGroupedData(sites) {
-            document.getElementById('sites-container').innerHTML = '';
-            siteCount = 0;
-
-            sites.forEach(site => {
-                addSite();
-                const sid = siteCount;
-                document.getElementById(`site-url-${sid}`).value = site.url || '';
-                document.getElementById(`site-cfclearance-${sid}`).value = site.cfClearance || '';
-
-                if (site.accounts && site.accounts.length > 0) {
-                    site.accounts.forEach((acc, i) => {
-                        if (i > 0) addAccountToSite(sid);
-                        const aid = siteAccountCounts[sid];
-                        document.getElementById(`acc-session-${sid}-${aid}`).value = acc.session || '';
-                        document.getElementById(`acc-userid-${sid}-${aid}`).value = acc.userId || '';
-                        document.getElementById(`acc-name-${sid}-${aid}`).value = acc.name || '';
-                        const loginUserEl = document.getElementById(`acc-login-user-${sid}-${aid}`);
-                        const loginPassEl = document.getElementById(`acc-login-pass-${sid}-${aid}`);
-                        if (loginUserEl) loginUserEl.value = acc.loginUser || '';
-                        if (loginPassEl) loginPassEl.value = acc.loginPass || '';
-                    });
-                }
-            });
-        }
-
-        function loadFlatData(flatAccounts) {
-            const grouped = {};
-            flatAccounts.forEach(acc => {
-                const key = (acc.url || '') + '|' + (acc.cfClearance || acc.cf_clearance || '');
-                if (!grouped[key]) {
-                    grouped[key] = { url: acc.url || '', cfClearance: acc.cfClearance || acc.cf_clearance || '', accounts: [] };
-                }
-                grouped[key].accounts.push({
-                    session: acc.session || '',
-                    userId: acc.userId || acc.user_id || '',
-                    name: acc.name || '',
-                    loginUser: acc.loginUser || acc.login_username || '',
-                    loginPass: acc.loginPass || acc.login_password || ''
-                });
-            });
-            loadGroupedData(Object.values(grouped));
-        }
-
-        function toggleImport() {
-            const section = document.getElementById('import-section');
-            if (section.style.display === 'none') {
-                section.style.display = 'block';
-                document.getElementById('import-json').focus();
-            } else {
-                section.style.display = 'none';
-                document.getElementById('import-json').value = '';
-            }
-        }
-
-        function importJSON() {
-            const raw = document.getElementById('import-json').value.trim();
-            if (!raw) { alert('⚠️ 请先粘贴 JSON 配置'); return; }
-
-            try {
-                const accounts = JSON.parse(raw);
-                if (!Array.isArray(accounts) || accounts.length === 0) {
-                    alert('⚠️ JSON 格式错误：应为账号数组（[]）');
-                    return;
-                }
-
-                for (let i = 0; i < accounts.length; i++) {
-                    if (!accounts[i].url || !accounts[i].session) {
-                        alert(`⚠️ 第 ${i + 1} 个账号缺少 url 或 session 字段`);
-                        return;
-                    }
-                }
-
-                loadFlatData(accounts);
-                toggleImport();
-                alert(`✅ 成功导入 ${document.querySelectorAll('.account-item').length} 个账号配置！已按站点自动分组。`);
-            } catch (e) {
-                alert('❌ JSON 解析失败：' + e.message + '\n\n请检查格式是否正确');
-            }
-        }
-
-        function jumpToUrl(siteId) {
-            const urlInput = document.getElementById(`site-url-${siteId}`);
-            const url = urlInput.value.trim();
-            if (!url) { alert('⚠️ 请先填写站点 URL'); return; }
-            const fullUrl = url.startsWith('http') ? url : 'https://' + url;
-            window.open(fullUrl, '_blank');
         }
 
         function clearLocal() {
-            const savedData = localStorage.getItem(STORAGE_KEY);
-            if (!savedData) { alert('⚠️ 没有本地保存的配置'); return; }
-
-            if (confirm('⚠️ 确定要清除本地保存的配置吗？\n\n此操作不可恢复！')) {
-                try {
-                    localStorage.removeItem(STORAGE_KEY);
-                    alert('✅ 已清除本地配置');
-                    location.reload();
-                } catch (e) { alert('❌ 清除失败：' + e.message); }
-            }
-        }
-
-        // _default 兜底；已知特殊站点可在这里追加精确路径。
-        const KEY_PAGE_TEMPLATES = {
-            _default: ['/console', '/console/personal', '/setting', '/user/personal'],
-            'lanxiu.cc': ['/console', '/console/personal', '/setting'],
-            'vsllm.com': ['/console', '/console/personal', '/setting'],
-        };
-        // 记忆用户对各站点密钥页候选的选择
-        const depKeyPageSelections = {};
-
-        function escapeHtml(s) {
-            return String(s).replace(/[&<>"']/g, c => ({'&':'&','<':'<','>':'>','"':'"',"'":'&#39;'}[c]));
-        }
-
-        // 读取已生成的 accounts（来自 #json-output）。若空则先调 generateConfig()。
-        function readGeneratedAccounts() {
-            let txt = (document.getElementById('json-output').textContent || '').trim();
-            if (!txt) {
-                generateConfig();
-                txt = (document.getElementById('json-output').textContent || '').trim();
-                if (!txt) return null;
-            }
-            try { return JSON.parse(txt); } catch (e) { return null; }
-        }
-
-        // 按 url origin 去重，返回 [{url, accounts}] 列表
-        function getUniqueSites(accounts) {
-            const map = new Map();
-            for (const a of accounts) {
-                try {
-                    const origin = (a.url || '').split('/').slice(0, 3).join('/');
-                    if (!origin) continue;
-                    if (!map.has(origin)) map.set(origin, { url: origin, accounts: [] });
-                    map.get(origin).accounts.push(a);
-                } catch (e) {}
-            }
-            return Array.from(map.values());
-        }
-
-        function originOf(url) {
-            try { return (url || '').split('/').slice(0, 3).join('/'); } catch (e) { return url; }
-        }
-
-        function keyPageCandidatesFor(host) {
-            for (const key in KEY_PAGE_TEMPLATES) {
-                if (key === '_default') continue;
-                if (host && host.includes(key)) return KEY_PAGE_TEMPLATES[key];
-            }
-            return KEY_PAGE_TEMPLATES._default;
-        }
-
-        function hostOf(url) {
-            try {
-                const m = (url || '').match(/^https?:\/\/([^/]+)/);
-                return m ? m[1] : '';
-            } catch (e) { return ''; }
-        }
-
-        // === 标签切换 ===
-        function openDeployment(kind) {
-            ensureConfigGenerated();
-            const sec = document.getElementById('deployment-section');
-            sec.style.display = 'block';
-            switchDeploymentTab(kind);
-            sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-
-        function switchDeploymentTab(kind) {
-            const tabs = ['keys', 'cloud', 'env'];
-            tabs.forEach(t => {
-                document.getElementById('dep-panel-' + t).style.display = (t === kind) ? 'block' : 'none';
-                document.getElementById('dep-tab-' + t).classList.toggle('active', t === kind);
-            });
-            if (kind === 'keys') renderKeyPages();
-            if (kind === 'cloud') renderCloudOutput();
-            if (kind === 'env') renderEnvOutput();
-        }
-
-        function ensureConfigGenerated() {
-            const txt = (document.getElementById('json-output').textContent || '').trim();
-            if (!txt) generateConfig();
-        }
-
-        // === (A) 密钥页 ===
-        function renderKeyPages() {
-            const accounts = readGeneratedAccounts();
-            const list = document.getElementById('dep-keys-list');
-            if (!accounts || accounts.length === 0) {
-                list.innerHTML = '<p style="color:#f87171;">⚠️ 没有账号配置。请先在上方填好站点和账号，点「✨ 生成配置」。</p>';
+            if (!localStorage.getItem(STORAGE_KEY)) {
+                showToast('没有本地配置。');
                 return;
             }
-            const sites = getUniqueSites(accounts);
-            list.innerHTML = sites.map((s, i) => {
-                const host = hostOf(s.url);
-                const cands = keyPageCandidatesFor(host);
-                const chosen = depKeyPageSelections[s.url] || cands[0];
-                const fullUrl = s.url + chosen;
-                const opts = cands.map(p => `<option value="${escapeHtml(p)}"${p === chosen ? ' selected' : ''}>${escapeHtml(p)}</option>`).join('');
-                const names = s.accounts.map(a => escapeHtml(a.name || a.user_id || '?')).join('、');
-                return `
-                <div class="key-card">
-                    <div class="key-card-head">
-                        <div>
-                            <div class="key-card-name">${escapeHtml(host || s.url)}</div>
-                            <div class="key-card-url">${escapeHtml(s.url)} · 账号: ${names}</div>
-                        </div>
-                        <div class="key-card-controls">
-                            <select id="dep-keys-sel-${i}" onchange="updateKeyPagePreview(${i})" style="flex:1;min-width:160px;">${opts}</select>
-                            <button class="btn btn-success btn-sm" onclick="openKeyPage(${i})">↗ 打开</button>
-                        </div>
-                    </div>
-                    <div id="dep-keys-preview-${i}" class="key-card-url" style="margin-top:6px;">${escapeHtml(fullUrl)}</div>
-                </div>`;
-            }).join('');
+            if (!window.confirm('确定清除当前浏览器中保存的账号配置吗？')) return;
+            localStorage.removeItem(STORAGE_KEY);
+            document.getElementById('restore-button').disabled = true;
+            showToast('本地配置已清除。');
         }
 
-        function getSiteUrlByIndex(i) {
-            const accounts = readGeneratedAccounts();
-            if (!accounts) return null;
-            const sites = getUniqueSites(accounts);
-            return sites[i] ? sites[i].url : null;
+        function openImport() {
+            document.getElementById('import-dialog').showModal();
+            document.getElementById('import-json').focus();
         }
 
-        function updateKeyPagePreview(i) {
-            const accounts = readGeneratedAccounts();
-            const sites = getUniqueSites(accounts || []);
-            const s = sites[i];
-            if (!s) return;
-            const sel = document.getElementById('dep-keys-sel-' + i);
-            const path = sel.value;
-            depKeyPageSelections[s.url] = path;
-            document.getElementById('dep-keys-preview-' + i).textContent = s.url + path;
+        function closeImport() {
+            document.getElementById('import-dialog').close();
         }
 
-        function openKeyPage(i) {
-            const accounts = readGeneratedAccounts();
-            const sites = getUniqueSites(accounts || []);
-            const s = sites[i];
-            if (!s) return;
-            updateKeyPagePreview(i);
-            const url = s.url + depKeyPageSelections[s.url];
-            window.open(url, '_blank', 'noopener');
+        function importConfig() {
+            try {
+                const accounts = JSON.parse(document.getElementById('import-json').value.trim());
+                validateImportedAccounts(accounts);
+                renderAccounts(accounts);
+                closeImport();
+                showToast(`已导入 ${accounts.length} 个账号。`);
+            } catch (error) {
+                showToast(`导入失败: ${error.message}`);
+            }
         }
 
-        function openAllKeyPages() {
-            const accounts = readGeneratedAccounts();
-            const sites = getUniqueSites(accounts || []);
-            if (!sites || sites.length === 0) { alert('请先生成配置'); return; }
-            sites.forEach((s, i) => openKeyPage(i));
+        function validateImportedAccounts(accounts) {
+            if (!Array.isArray(accounts) || accounts.length === 0) {
+                throw new Error('JSON 必须是非空账号数组。');
+            }
+            accounts.forEach((account, index) => {
+                if (!account || !account.url || !account.session) {
+                    throw new Error(`第 ${index + 1} 个账号缺少 url 或 session。`);
+                }
+            });
         }
 
-        function copyKeyPages(ev) {
-            const accounts = readGeneratedAccounts();
-            const sites = getUniqueSites(accounts || []);
-            if (!sites || sites.length === 0) { alert('请先生成配置'); return; }
-            const text = sites.map(s => s.url + (depKeyPageSelections[s.url] || keyPageCandidatesFor(hostOf(s.url))[0])).join('\n');
-            copyText(text, ev && ev.target);
+        function renderAccounts(accounts) {
+            validateImportedAccounts(accounts);
+            const grouped = new Map();
+            accounts.forEach(account => {
+                const key = `${account.url}|${account.cf_clearance || ''}`;
+                if (!grouped.has(key)) {
+                    grouped.set(key, {
+                        url: account.url,
+                        cf_clearance: account.cf_clearance || '',
+                        accounts: [],
+                    });
+                }
+                grouped.get(key).accounts.push(account);
+            });
+
+            document.getElementById('sites-container').innerHTML = '';
+            siteSequence = 0;
+            accountSequences.clear();
+            grouped.forEach(site => addSite(site));
+            document.getElementById('result').hidden = true;
         }
 
-        // === (B) 一键配置 GitHub Secrets：生成单行 JSON + 跳转 Secrets 页 ===
-        function renderCloudOutput() {
-            const accounts = readGeneratedAccounts();
-            const out = document.getElementById('dep-cloud-output');
-            if (!accounts) { out.textContent = '⚠️ 请先生成配置'; return; }
-            out.textContent = JSON.stringify(accounts); // 单行 JSON
-        }
-
-        function copyAccountsJson(ev) {
-            const text = document.getElementById('dep-cloud-output').textContent;
-            if (!text || text.startsWith('⚠️')) { alert('请先生成配置'); return; }
-            copyText(text, ev && ev.target);
+        async function copyGeneratedConfig() {
+            const json = document.getElementById('json-output').textContent;
+            const copied = await copyText(json);
+            showToast(copied ? 'JSON 已复制。' : '复制失败，请手动复制。');
         }
 
         function openGitHubSecrets() {
-            // 跳转到本仓库的 Actions Secrets 设置页
-            const url = 'https://github.com/Qiscard/Newapi-checkin/settings/secrets/actions';
-            window.open(url, '_blank', 'noopener');
-        }
-
-        // === (C) .env 导出 ===
-        function renderEnvOutput() {
-            const accounts = readGeneratedAccounts();
-            const out = document.getElementById('dep-env-output');
-            if (!accounts) { out.textContent = '⚠️ 请先生成配置'; return; }
-            const singleLine = JSON.stringify(accounts); // 必须单行
-            const lines = [];
-            lines.push('# NewAPI 自动签到 .env');
-            lines.push('# 仅本地运行；含敏感信息，请勿提交 git');
-            lines.push('');
-            lines.push('# ===== 云端配置（可选，优先级高于下方 NEWAPI_ACCOUNTS）=====');
-            lines.push('# CONFIG_URL=');
-            lines.push('# CONFIG_AUTH=user:password   # 或 token:xxx');
-            lines.push('');
-            lines.push('# ===== 账号配置（JSON 格式，必须单行，不加外层引号）=====');
-            lines.push('NEWAPI_ACCOUNTS=' + singleLine);
-            lines.push('');
-            if (document.getElementById('dep-env-dingtalk').checked) {
-                lines.push('# ===== 钉钉 =====');
-                lines.push('# DINGTALK_WEBHOOK=https://oapi.dingtalk.com/robot/send?access_token=xxxxx');
-                lines.push('# DINGTALK_SECRET=SECxxxxx');
-                lines.push('');
+            let repository = 'Qiscard/Newapi-checkin';
+            if (window.location.hostname.endsWith('.github.io')) {
+                const owner = window.location.hostname.slice(0, -'.github.io'.length);
+                const repo = window.location.pathname.split('/').filter(Boolean)[0];
+                if (owner && repo) repository = `${owner}/${repo}`;
             }
-            if (document.getElementById('dep-env-email').checked) {
-                lines.push('# ===== 邮件（SMTP_*）=====');
-                lines.push('# SMTP_HOST=smtp.qq.com');
-                lines.push('# SMTP_PORT=465');
-                lines.push('# SMTP_USER=your@qq.com');
-                lines.push('# SMTP_PASS=your_authorization_code');
-                lines.push('# SMTP_TO=receiver@example.com');
-                lines.push('# SMTP_FROM=your@qq.com');
-                lines.push('');
-            }
-            if (document.getElementById('dep-env-serverchan').checked) {
-                lines.push('# ===== ServerChan =====');
-                lines.push('# SERVERCHAN_SENDKEY=SCTxxxxx');
-                lines.push('');
-            }
-            out.textContent = lines.join('\n');
+            window.open(
+                `https://github.com/${repository}/settings/secrets/actions`,
+                '_blank',
+                'noopener,noreferrer',
+            );
         }
 
-        function copyEnvOutput(ev) {
-            const text = document.getElementById('dep-env-output').textContent;
-            if (!text || text.startsWith('⚠️')) { alert('请先生成配置'); return; }
-            copyText(text, ev && ev.target);
-        }
-
-        function downloadEnvFile() {
-            const text = document.getElementById('dep-env-output').textContent;
-            if (!text || text.startsWith('⚠️')) { alert('请先生成配置'); return; }
-            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = '.env';
-            a.click();
-            URL.revokeObjectURL(a.href);
-        }
-
-        // 通用复制（兼容非 https / clipboard API 不可用时）
-        function copyText(text, btn) {
-            if (!text) return;
-            const done = () => {
-                if (btn) {
-                    const orig = btn.textContent;
-                    btn.textContent = '✅ 已复制';
-                    setTimeout(() => { btn.textContent = orig; }, 1500);
-                }
-            };
+        async function copyText(text) {
+            if (!text) return false;
             if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
-            } else {
-                fallbackCopy(text, done);
+                try {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                } catch (_) {}
             }
-        }
-        function fallbackCopy(text, done) {
-            try {
-                const ta = document.createElement('textarea');
-                ta.value = text;
-                ta.style.position = 'fixed';
-                ta.style.opacity = '0';
-                document.body.appendChild(ta);
-                ta.select();
-                document.execCommand('copy');
-                document.body.removeChild(ta);
-                done && done();
-            } catch (e) { alert('复制失败，请手动选中复制'); }
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            const copied = document.execCommand('copy');
+            textarea.remove();
+            return copied;
         }
 
-        // 监听下拉/复选框变化，实时刷新输出
-        document.addEventListener('change', (e) => {
-            if (e.target && (e.target.id === 'dep-env-dingtalk' || e.target.id === 'dep-env-email' || e.target.id === 'dep-env-serverchan')) renderEnvOutput();
-        });
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.hidden = false;
+            window.clearTimeout(toastTimer);
+            toastTimer = window.setTimeout(() => { toast.hidden = true; }, 3200);
+        }
 
-        // === 部署便捷功能区 结束 ===
-</script>
+        function valueOf(id) { return document.getElementById(id)?.value.trim() || ''; }
+        function setValue(id, value) { document.getElementById(id).value = value || ''; }
+        function addOptional(target, key, value) { if (value) target[key] = value; }
+    </script>
 </body>
 </html>
