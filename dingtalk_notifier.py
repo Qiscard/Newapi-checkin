@@ -10,6 +10,7 @@ import base64
 import time
 import urllib.parse
 import json
+import math
 import os
 from datetime import datetime
 from typing import Optional, List, Dict, Any
@@ -18,8 +19,6 @@ try:
     import requests
 except ImportError:
     requests = None
-
-from notifier import format_quota
 
 
 class DingTalkNotifier:
@@ -148,6 +147,46 @@ class DingTalkNotifier:
             return False
 
 
+def _number(value, default=0):
+    if value is None or isinstance(value, bool):
+        return default
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return default
+    if not math.isfinite(number):
+        return default
+    return int(number) if number.is_integer() else number
+
+
+def _markdown_cell(value, default='') -> str:
+    return str(value if value is not None else default).replace('|', '\\|').replace('\r', ' ').replace('\n', ' ')
+
+
+def _session_expired(result: Dict[str, Any]) -> bool:
+    message = str(result.get('message') or '')
+    return bool(result.get('session_expired') is True or 'session' in message.lower() or '认证' in message or '过期' in message)
+
+
+def format_quota(quota: int) -> str:
+    """
+    格式化额度显示
+    
+    Args:
+        quota: 额度数值
+        
+    Returns:
+        格式化后的字符串
+    """
+    quota = _number(quota)
+    if quota >= 1000000:
+        return f'{quota / 1000000:.2f}M'
+    elif quota >= 1000:
+        return f'{quota / 1000:.2f}K'
+    else:
+        return str(quota)
+
+
 def build_checkin_report(results: List[Dict[str, Any]], execution_time: str) -> str:
     """
     构建签到报告 Markdown 内容
@@ -165,8 +204,8 @@ def build_checkin_report(results: List[Dict[str, Any]], execution_time: str) -> 
     Returns:
         Markdown 格式的报告内容
     """
-    success_list = [r for r in results if r.get('success')]
-    fail_list = [r for r in results if not r.get('success')]
+    success_list = [r for r in results if r.get('success') is True]
+    fail_list = [r for r in results if r.get('success') is not True]
     
     # 标题
     lines = [
@@ -182,16 +221,15 @@ def build_checkin_report(results: List[Dict[str, Any]], execution_time: str) -> 
     if success_list:
         lines.append(f'## ✅ 成功 ({len(success_list)}个)')
         lines.append('')
-        lines.append('| 账号 | 奖励 | 详情 | 抽奖 |')
-        lines.append('|------|------|------|------|')
+        lines.append('| 账号 | 奖励 | 详情 |')
+        lines.append('|------|------|------|')
         for r in success_list:
-            name = r.get('name', '未知账号')
-            quota = r.get('quota_awarded', 0)
+            name = _markdown_cell(r.get('name'), '未知账号')
+            quota = _number(r.get('quota_awarded'))
             quota_str = f'+{format_quota(quota)}' if quota else '-'
-            checkin_count = r.get('checkin_count')
-            detail = f'已签 {checkin_count} 天' if checkin_count else r.get('message', '成功')
-            lottery = '<br/>'.join(r.get('lottery', [])) or '-'
-            lines.append(f'| {name} | {quota_str} | {detail} | {lottery} |')
+            checkin_count = _number(r.get('checkin_count'))
+            detail = _markdown_cell(f'已签 {checkin_count} 天' if checkin_count else r.get('message'), '成功')
+            lines.append(f'| {name} | {quota_str} | {detail} |')
         lines.append('')
     
     # 失败列表
@@ -201,12 +239,12 @@ def build_checkin_report(results: List[Dict[str, Any]], execution_time: str) -> 
         lines.append('| 账号 | 原因 |')
         lines.append('|------|------|')
         for r in fail_list:
-            name = r.get('name', '未知账号')
-            message = r.get('message', '未知错误')
+            name = _markdown_cell(r.get('name'), '未知账号')
+            message = str(r.get('message') or '未知错误')
             # 标注 session 失效
-            if r.get('session_expired') or 'session' in message.lower() or '认证' in message or '过期' in message:
+            if _session_expired(r):
                 message = f'⚠️ {message}'
-            lines.append(f'| {name} | {message} |')
+            lines.append(f'| {name} | {_markdown_cell(message)} |')
         lines.append('')
     
     # 汇总
@@ -225,10 +263,7 @@ def build_checkin_report(results: List[Dict[str, Any]], execution_time: str) -> 
         lines.append(f'**汇总**: 成功 {success_count}，失败 {fail_count}')
     
     # 如果有 session 失效的账号，添加提醒
-    expired_accounts = [r for r in fail_list if r.get('session_expired') or 
-                       'session' in r.get('message', '').lower() or 
-                       '认证' in r.get('message', '') or 
-                       '过期' in r.get('message', '')]
+    expired_accounts = [r for r in fail_list if _session_expired(r)]
     if expired_accounts:
         lines.append('')
         lines.append('> ⚠️ **注意**: 部分账号 Session 已失效，请及时更新 Cookie！')
@@ -263,8 +298,8 @@ def send_checkin_notification(results: List[Dict[str, Any]], execution_time: Opt
     report = build_checkin_report(results, execution_time)
     
     # 生成标题（用于消息列表预览）
-    success_count = len([r for r in results if r.get('success')])
-    fail_count = len([r for r in results if not r.get('success')])
+    success_count = len([r for r in results if r.get('success') is True])
+    fail_count = len([r for r in results if r.get('success') is not True])
     
     if fail_count == 0:
         title = f'✅ 签到成功 ({success_count}个账号)'
@@ -278,4 +313,40 @@ def send_checkin_notification(results: List[Dict[str, Any]], execution_time: Opt
     return notifier.send_markdown(title, report)
 
 
-
+# 测试入口
+if __name__ == '__main__':
+    # 测试数据
+    test_results = [
+        {
+            'name': '主力站',
+            'success': True,
+            'message': '签到成功',
+            'quota_awarded': 500000,
+            'checkin_count': 15
+        },
+        {
+            'name': '备用站',
+            'success': True,
+            'message': '签到成功',
+            'quota_awarded': 100000,
+            'checkin_count': 8
+        },
+        {
+            'name': '测试站',
+            'success': False,
+            'message': 'Session 已过期',
+            'session_expired': True
+        }
+    ]
+    
+    # 打印预览
+    report = build_checkin_report(test_results, datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+    print('=== 消息预览 ===')
+    print(report)
+    print('================')
+    
+    # 如果配置了环境变量则发送
+    if os.environ.get('DINGTALK_WEBHOOK'):
+        send_checkin_notification(test_results)
+    else:
+        print('\n提示: 设置 DINGTALK_WEBHOOK 环境变量后可测试实际发送')
