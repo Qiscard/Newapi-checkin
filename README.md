@@ -20,6 +20,11 @@
 - ✅ **请求限流处理**（登录接口返回 429 时友好跳过，不会直接报错）
 - ✅ **哈基米中转站专属抽奖**（lanxiu.cc 站点签到后自动抽取额度，每日 2 次，仅本地运行）
 - ✅ **维云中转站专属翻卡**（vsllm.com 站点签到后自动翻卡，每日 3 次，本地和 GHA 均可运行）
+- ✅ **系统访问令牌认证**（access_token 走 Authorization 头，不依赖 session，永不过期烦恼）
+- ✅ **Cloudflare 自动应对**（网络层挑战用浏览器过检，已实测 GitHub Actions 数据中心 IP 可通过）
+- ✅ **Turnstile 人机验证自动求解**（真实 Chrome 渲染组件并模拟点击，token 自动携带）
+- ✅ **PoW 工作量证明自动解算**（new-api 新版防滥用机制，SHA-256 前导零比特本地解算）
+- ✅ **液态玻璃双主题配置页**（浅色/深色一键切换，移动端自适应）
 
 ## 🛠️ 配置工具（推荐）
 
@@ -280,6 +285,48 @@ document.cookie.split('; ').find(row => row.startsWith('session=')).split('=')[1
 ```
 
 直接复制输出的值即可。
+
+---
+
+## 🎫 使用系统访问令牌（推荐，替代 Session）
+
+站点开启 Cloudflare 防护或 Turnstile 人机验证时，**强烈推荐使用系统访问令牌**——通过 `Authorization` 请求头认证，不依赖 session cookie，且签到脚本会自动应对 CF 挑战与 Turnstile/PoW 验证。
+
+### 获取方式
+
+1. 浏览器登录站点
+2. 点击右上角头像 → **个人设置**
+3. 找到 **系统访问令牌** → 生成并复制
+4. 注意：不是 `sk-` 开头的 API 密钥，两者不可混用
+
+### 配置格式
+
+JSON 格式中加入 `access_token` 字段（session 与令牌二选一，推荐令牌）：
+
+```json
+[
+  {
+    "url": "https://example.com",
+    "session": "",
+    "access_token": "你的系统访问令牌",
+    "user_id": "123",
+    "name": "站点备注"
+  }
+]
+```
+
+简单格式支持三段式：`https://example.com#session#access_token`
+
+### 脚本自动应对的防护机制
+
+| 防护 | 应对方式 |
+| --- | --- |
+| Cloudflare 网络层挑战（Just a moment） | 无头浏览器过检，失败自动切换真实 Chrome |
+| Turnstile 人机验证 | 真实 Chrome 渲染组件并模拟点击，token 自动携带 |
+| PoW 工作量证明（new-api 新版） | 本地解算 SHA-256 nonce（毫秒到数秒） |
+| WAF 硬封禁（IP 段拉黑） | 无法技术破解，需更换出口 IP（本地可配置系统代理） |
+
+> ⚠️ GitHub Actions 使用数据中心 IP，部分站点可能对其 WAF 策略更严格；本地运行可配合系统代理使用。
 
 ---
 
@@ -1246,6 +1293,36 @@ MIT License
 ## 🤝 贡献
 
 欢迎提交 Issue 和 Pull Request！
+
+---
+
+## 🙏 致谢
+
+- [QuantumNous/new-api](https://github.com/QuantumNous/new-api) —— 本项目所对接的上游网关系统
+- 所有通过 Issue、PR 和 Fork 参与改进的贡献者
+- 感谢 [newapi-ai-check-in](https://github.com/aceHubert/newapi-ai-check-in) 等同类项目提供的思路参考
+
+---
+
+## ⚠️ 免责声明
+
+1. 本项目仅供学习交流和个人自动化使用，请遵守目标站点的服务条款
+2. 请合理使用签到功能，不要对站点造成过大访问压力（脚本已内置限流处理）
+3. 使用本项目产生的任何账号风险（封号、降权等）由使用者自行承担
+4. 请勿将本项目用于任何商业用途或恶意场景
+5. 本项目不存储、不上传任何用户的凭证信息至开发者服务器——所有配置均保存在用户自己的环境（本地 `.env`、GitHub Secrets 或用户自己的 WebDAV）中
+
+---
+
+## ⭐ 支持项目
+
+如果这个项目对你有帮助，欢迎点一个 **Star** ⭐ 支持一下！
+
+你也可以通过以下方式支持：
+
+- 🐛 提交 [Issue](https://github.com/Jasonliu-0/Newapi-checkin/issues) 反馈问题或建议新功能
+- 🔀 提交 Pull Request 改进代码
+- 📢 推荐给有需要的朋友
 
 ---
 
