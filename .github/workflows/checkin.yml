@@ -26,7 +26,12 @@ jobs:
       - name: 安装 Playwright 浏览器
         run: playwright install chromium --with-deps
 
-      - name: 执行签到
+      - name: 确认 Chrome 与 xvfb
+        run: |
+          google-chrome --version
+          which xvfb-run || (sudo apt-get update && sudo apt-get install -y xvfb)
+
+      - name: 执行签到（xvfb 虚拟显示，含 Turnstile 解验证）
         env:
           CONFIG_URL: ${{ secrets.CONFIG_URL }}
           CONFIG_AUTH: ${{ secrets.CONFIG_AUTH }}
@@ -40,4 +45,4 @@ jobs:
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
-        run: python checkin.py
+        run: xvfb-run --auto-servernum python checkin.py
