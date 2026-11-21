@@ -39,11 +39,11 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 880px;
             margin: 0 auto;
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 24px;
+            border-radius: 18px;
             overflow: hidden;
             backdrop-filter: blur(20px);
             box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5), 0 0 120px rgba(99, 102, 241, 0.1);
@@ -58,7 +58,7 @@
         .header {
             background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
             color: white;
-            padding: 40px 35px;
+            padding: 22px 28px;
             text-align: center;
             position: relative;
             overflow: hidden;
@@ -91,17 +91,18 @@
         }
 
         .header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
+            font-size: 22px;
+            margin-bottom: 6px;
             position: relative;
             letter-spacing: -0.5px;
         }
 
         .header p {
             opacity: 0.9;
-            font-size: 15px;
+            font-size: 13px;
             position: relative;
             line-height: 1.5;
+            margin-bottom: 8px;
         }
 
         .back-link {
@@ -135,7 +136,7 @@
         }
 
         .content {
-            padding: 30px 35px;
+            padding: 20px 24px;
             color: rgba(255, 255, 255, 0.85);
         }
 
@@ -151,36 +152,6 @@
             align-items: center;
             gap: 10px;
             animation: noticeIn 0.5s ease-out;
-        }
-
-        .cors-notice {
-            background: rgba(245, 158, 11, 0.08);
-            border: 1px solid rgba(245, 158, 11, 0.2);
-            color: #fbbf24;
-            padding: 15px 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            animation: noticeIn 0.5s ease-out;
-            line-height: 1.6;
-        }
-
-        .cors-notice .cors-icon {
-            flex-shrink: 0;
-            font-size: 18px;
-        }
-
-        .cors-notice a {
-            color: #a78bfa;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
-        .cors-notice a:hover {
-            color: #c4b5fd;
         }
 
         .cors-proxy-section {
@@ -223,8 +194,8 @@
 
         .site-card {
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-            margin-bottom: 24px;
+            border-radius: 12px;
+            margin-bottom: 14px;
             background: rgba(255, 255, 255, 0.04);
             transition: all 0.3s ease;
             animation: cardIn 0.4s ease-out backwards;
@@ -286,10 +257,102 @@
         .site-actions {
             display: flex;
             gap: 8px;
+            align-items: center;
+        }
+
+        .site-type-toggle {
+            display: inline-flex;
+            background: rgba(148, 163, 184, 0.12);
+            border: 1px solid rgba(100, 116, 139, 0.2);
+            border-radius: 999px;
+            padding: 3px;
+            gap: 2px;
+        }
+
+        .site-type-toggle button {
+            border: none;
+            background: transparent;
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .site-type-toggle button.active {
+            background: #ffffff;
+            color: #1d4ed8;
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.15);
+        }
+
+        html[data-theme="dark"] .site-type-toggle {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.14);
+        }
+
+        html[data-theme="dark"] .site-type-toggle button {
+            color: rgba(255, 255, 255, 0.55);
+        }
+
+        html[data-theme="dark"] .site-type-toggle button.active {
+            background: rgba(99, 102, 241, 0.3);
+            color: #fff;
+            box-shadow: none;
+        }
+
+        .site-type-tag {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 999px;
+            letter-spacing: .3px;
+        }
+
+        .site-type-tag.sub2api {
+            background: rgba(13, 148, 136, 0.12);
+            border: 1px solid rgba(13, 148, 136, 0.35);
+            color: #0f766e;
+        }
+
+        html[data-theme="dark"] .site-type-tag.sub2api {
+            background: rgba(94, 234, 212, 0.16);
+            border-color: rgba(94, 234, 212, 0.35);
+            color: #5eead4;
+        }
+
+        .site-type-tag.newapi {
+            background: rgba(99, 102, 241, 0.12);
+            border: 1px solid rgba(99, 102, 241, 0.35);
+            color: #4f46e5;
+        }
+
+        html[data-theme="dark"] .site-type-tag.newapi {
+            background: rgba(99, 102, 241, 0.16);
+            border-color: rgba(99, 102, 241, 0.35);
+            color: #a5b4fc;
+        }
+
+        .sub2api-fields {
+            display: none !important;
+        }
+
+        .site-card[data-type="sub2api"] .sub2api-fields {
+            display: grid !important;
+        }
+
+        .site-card[data-type="sub2api"] .newapi-fields {
+            display: none !important;
+        }
+
+        .site-card[data-type="sub2api"] .site-cf-field {
+            display: none !important;
         }
 
         .site-body {
-            padding: 20px 24px;
+            padding: 14px 18px;
         }
 
         .site-site-fields {
@@ -317,15 +380,15 @@
         }
 
         .form-group {
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             color: rgba(255, 255, 255, 0.75);
             font-weight: 500;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .form-group label .required {
@@ -335,10 +398,10 @@
 
         .form-group input {
             width: 100%;
-            padding: 12px 16px;
+            padding: 9px 12px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            font-size: 14px;
+            border-radius: 8px;
+            font-size: 13px;
             transition: all 0.3s;
             background: rgba(255, 255, 255, 0.06);
             color: rgba(255, 255, 255, 0.9);
@@ -405,9 +468,9 @@
         .account-item {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
             position: relative;
             transition: all 0.3s ease;
             animation: accIn 0.3s ease-out backwards;
@@ -427,12 +490,12 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         .account-item-title {
             color: rgba(255, 255, 255, 0.65);
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
         }
 
@@ -523,8 +586,8 @@
 
         .btn-group {
             display: flex;
-            gap: 12px;
-            margin-top: 24px;
+            gap: 10px;
+            margin-top: 14px;
             flex-wrap: wrap;
         }
 
@@ -840,11 +903,12 @@
 
         .footer {
             text-align: center;
-            padding: 20px 35px;
+            padding: 14px 24px;
             background: rgba(255, 255, 255, 0.02);
             border-top: 1px solid rgba(255, 255, 255, 0.06);
             color: rgba(255, 255, 255, 0.4);
-            font-size: 13px;
+            font-size: 12px;
+            line-height: 1.8;
         }
 
         .footer a {
@@ -855,6 +919,15 @@
 
         .footer a:hover {
             color: #c4b5fd;
+        }
+
+        .footer-links {
+            margin-top: 2px;
+        }
+
+        .footer-sep {
+            margin: 0 8px;
+            opacity: .5;
         }
 
         @media (max-width: 768px) {
@@ -1135,20 +1208,7 @@
             color: #1e40af;
         }
 
-        .cors-notice {
-            background: #fffbeb;
-            border: 1px solid #fde68a;
-            color: #92400e;
-        }
-
-        .cors-notice a {
-            color: #1d4ed8;
-        }
-
-        .cors-notice a:hover {
-            color: #2563eb;
-        }
-
+        
         .cors-proxy-section {
             background: #fffbeb;
             border: 1px solid #fde68a;
@@ -1813,14 +1873,6 @@
             color: #1e40af;
         }
 
-        .cors-notice {
-            background: rgba(254, 249, 195, 0.5);
-            backdrop-filter: blur(20px) saturate(150%);
-            -webkit-backdrop-filter: blur(20px) saturate(150%);
-            border: 1px solid rgba(253, 230, 138, 0.85);
-            color: #92400e;
-        }
-
         .cors-proxy-section {
             background: rgba(254, 249, 195, 0.45);
             border: 1px solid rgba(253, 230, 138, 0.7);
@@ -1991,20 +2043,6 @@
             background: rgba(37, 99, 235, 0.14);
             border: 1px solid rgba(96, 165, 250, 0.3);
             color: #93c5fd;
-        }
-
-        html[data-theme="dark"] .cors-notice {
-            background: rgba(245, 158, 11, 0.09);
-            border: 1px solid rgba(245, 158, 11, 0.28);
-            color: #fcd34d;
-        }
-
-        html[data-theme="dark"] .cors-notice a {
-            color: #7dd3fc;
-        }
-
-        html[data-theme="dark"] .cors-notice a:hover {
-            color: #bae6fd;
         }
 
         html[data-theme="dark"] .cors-proxy-section {
@@ -2489,11 +2527,11 @@
     <div class="container">
         <div class="header">
             <a href="index.html" class="back-link">← 返回首页</a>
-            <h1>🚀 NewAPI 配置生成器</h1>
-            <p>轻松生成多账号签到配置，同站点多账号只需填写一次 URL</p>
+            <h1>🚀 NewAPI / Sub2API 配置生成器</h1>
+            <p>多账号签到配置，支持 NewAPI 与 Sub2API 站点</p>
             <div class="header-badges">
-                <span class="header-badge">🔐 支持系统访问令牌</span>
-                <span class="header-badge">🛡️ 自动过 Turnstile 人机验证</span>
+                <span class="header-badge">🔐 系统访问令牌</span>
+                <span class="header-badge">🍃 Sub2API 签到</span>
                 <span class="header-badge">☁️ WebDAV 云端同步</span>
             </div>
         </div>
@@ -2558,20 +2596,7 @@
             color: #1e40af;
         }
 
-        .cors-notice {
-            background: #fffbeb;
-            border: 1px solid #fde68a;
-            color: #92400e;
-        }
-
-        .cors-notice a {
-            color: #1d4ed8;
-        }
-
-        .cors-notice a:hover {
-            color: #2563eb;
-        }
-
+        
         .cors-proxy-section {
             background: #fffbeb;
             border: 1px solid #fde68a;
@@ -3236,14 +3261,6 @@
             color: #1e40af;
         }
 
-        .cors-notice {
-            background: rgba(254, 249, 195, 0.5);
-            backdrop-filter: blur(20px) saturate(150%);
-            -webkit-backdrop-filter: blur(20px) saturate(150%);
-            border: 1px solid rgba(253, 230, 138, 0.85);
-            color: #92400e;
-        }
-
         .cors-proxy-section {
             background: rgba(254, 249, 195, 0.45);
             border: 1px solid rgba(253, 230, 138, 0.7);
@@ -3414,20 +3431,6 @@
             background: rgba(37, 99, 235, 0.14);
             border: 1px solid rgba(96, 165, 250, 0.3);
             color: #93c5fd;
-        }
-
-        html[data-theme="dark"] .cors-notice {
-            background: rgba(245, 158, 11, 0.09);
-            border: 1px solid rgba(245, 158, 11, 0.28);
-            color: #fcd34d;
-        }
-
-        html[data-theme="dark"] .cors-notice a {
-            color: #7dd3fc;
-        }
-
-        html[data-theme="dark"] .cors-notice a:hover {
-            color: #bae6fd;
         }
 
         html[data-theme="dark"] .cors-proxy-section {
@@ -3971,17 +3974,11 @@
         </style>
 
         <div class="content">
-            <div id="cors-notice" class="cors-notice" style="display: none;">
-                <span class="cors-icon">⚠️</span>
-                <div>
-                    <strong id="cors-notice-title">当前页面以网络协议运行，云端同步可能受 CORS 跨域限制。</strong><br>
-                    <span id="cors-notice-tips" style="color: #94a3b8;">如遇连接失败，推荐优先在云端同步中启用 <strong>CORS 代理</strong>。</span>
-                </div>
-            </div>
             <div id="sites-container"></div>
 
             <div class="btn-group">
-                <button class="btn btn-primary" onclick="addSite()">➕ 添加站点</button>
+                <button class="btn btn-primary" onclick="addSite('newapi')">➕ 添加 NewAPI 站点</button>
+                <button class="btn btn-primary" onclick="addSite('sub2api')">🍃 添加 Sub2API 站点</button>
                 <button class="btn btn-success" onclick="generateConfig()">✨ 生成配置</button>
             </div>
 
@@ -3997,7 +3994,7 @@
 
             <div id="cloud-section" class="cloud-section" style="display: none;">
                 <h3>☁️ 云端同步</h3>
-                <p style="color: #94a3b8; font-size: 14px; margin-bottom: 16px;">将配置保存到你的云盘/NAS，GitHub Actions 签到脚本可直接从云端拉取配置，改配置无需推代码</p>
+                <p style="color: #94a3b8; font-size: 13px; margin-bottom: 12px;">配置存云端，GitHub Actions 直接拉取，改配置无需推代码</p>
 
                 <div class="cloud-presets">
                     <button class="cloud-preset-btn" onclick="applyCloudPreset('jianguoyun')" id="preset-jianguoyun">🥜 坚果云</button>
@@ -4155,7 +4152,7 @@
 
             <div id="import-section" class="import-section" style="display: none;">
                 <h3>📋 导入 JSON 配置</h3>
-                <p style="color: #94a3b8; font-size: 14px; margin-bottom: 16px;">粘贴已有的 JSON 配置，一键导入并按站点自动分组填充表单</p>
+                <p style="color: #94a3b8; font-size: 13px; margin-bottom: 12px;">粘贴 JSON 配置，一键导入并按站点分组填充</p>
                 <textarea id="import-json" class="import-textarea" placeholder='粘贴 JSON 配置，例如：
 [
   {
@@ -4173,42 +4170,8 @@
                 </div>
             </div>
 
-            <div class="tips" style="margin-top: 24px;">
-                <h4>💡 使用提示：</h4>
-                <ul>
-                    <li><strong>站点分组：</strong>同一站点的 URL 和 CF Clearance 只需填写一次，站点下可添加多个账号</li>
-                    <li><strong>账号信息：</strong>每个账号填写 Session 或 系统访问令牌（二选一，推荐令牌）、用户ID 和备注名称；令牌在站点「个人设置」中生成，配置后不依赖 session 且支持 Turnstile 人机验证站点</li>
-                    <li><strong>保存到本地：</strong>将配置保存到浏览器本地存储，下次访问自动加载</li>
-                    <li><strong>明文存储：</strong>数据以明文形式存储在浏览器中，请注意安全</li>
-                </ul>
-            </div>
-
-            <div id="bookmark-section" class="cloud-section">
-                <h3>🧷 站点一键抓取书签</h3>
-                <p style="font-size: 13px; margin-bottom: 12px; line-height: 1.7;">
-                    把下面的书签拖到浏览器收藏夹。以后在任何已登录的 NewAPI 站点页面上点一下这个书签，
-                    就会自动抓取 <strong>站点地址、用户ID、系统访问令牌</strong>（现场生成新令牌，旧令牌自动作废），
-                    并自动打开本页面回填配置——全程无需 F12。
-                </p>
-                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px;">
-                    <a id="bookmarklet-link" href="#" onclick="return false;"
-                       style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 999px;
-                              background: linear-gradient(135deg, rgba(37,99,235,0.9), rgba(14,165,233,0.9)); color: #fff;
-                              text-decoration: none; font-weight: 600; font-size: 14px; cursor: grab;"
-                       title="把我拖到浏览器收藏夹">🧷 抓取签到配置</a>
-                    <button class="btn btn-secondary btn-sm" onclick="copyBookmarklet()">📋 复制书签代码</button>
-                </div>
-                <small style="color: #94a3b8; line-height: 1.6; display: block;">
-                    使用方法：① 把蓝色按钮拖到收藏夹栏（或点「复制书签代码」手动新建书签，网址粘贴代码）；
-                    ② 打开任意已登录的 NewAPI 站点；③ 点收藏夹里的书签，确认后自动回填本页。
-                    💡 支持多站点：连续去多个站点点书签，抓取结果会累计暂存并一起回填。
-                    ⚠️ 注意：每次抓取会重新生成该站点的系统访问令牌，旧令牌将失效。
-                </small>
-                <div id="bm-stash-info" style="margin-top: 12px; font-size: 13px; color: #475569;">📭 暂存区为空</div>
-                <div style="margin-top: 8px; display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button class="btn btn-secondary btn-sm" id="bm-refill-btn" style="display: none;" onclick="refillBookmarkStash()">📋 回填暂存站点</button>
-                    <button class="btn btn-secondary btn-sm" id="bm-clear-btn" style="display: none;" onclick="clearBookmarkStash()">🧹 清空暂存</button>
-                </div>
+            <div class="tips" style="margin-top: 14px;">
+                <p style="font-size: 12px; color: rgba(255,255,255,0.45); margin: 0;">NewAPI 站点：Session / 系统访问令牌 + 用户ID；Sub2API 站点：邮箱 / 密码 / Access Token / Refresh Token。配置以明文存于浏览器本地。</p>
             </div>
 
             <div id="result" class="result-section" style="display: none;">
@@ -4245,7 +4208,14 @@
         </div>
 
         <div class="footer">
-            <p>Made with ❤️ by <a href="https://github.com/Jasonliu-0/Newapi-checkin" target="_blank" style="display: inline-flex; align-items: center;"><svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" style="vertical-align: -2px; margin-right: 4px;"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53 .63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>Jasonliu-0</a></p>
+            <p>
+                Made with ❤️ by <a href="https://github.com/Jasonliu-0/Newapi-checkin" target="_blank" style="display: inline-flex; align-items: center;"><svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" style="vertical-align: -2px; margin-right: 4px;"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53 .63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>Jasonliu-0</a>
+            </p>
+            <p class="footer-links">
+                <a href="https://github.com/qiscard/Newapi-checkin" target="_blank" rel="noopener">本仓库</a>
+                <span class="footer-sep">·</span>
+                <a href="https://github.com/qiscard/Newapi-checkin/settings/secrets/actions" target="_blank" rel="noopener">⚙️ 配置仓库密钥</a>
+            </p>
         </div>
     </div>
 
@@ -4257,18 +4227,24 @@
             addSite();
         };
 
-        function addSite() {
+        function addSite(type) {
             siteCount++;
             siteAccountCounts[siteCount] = 0;
+            const siteType = type === 'sub2api' ? 'sub2api' : 'newapi';
             const container = document.getElementById('sites-container');
 
             const siteCard = document.createElement('div');
             siteCard.className = 'site-card';
             siteCard.id = `site-${siteCount}`;
+            siteCard.dataset.type = siteType;
             siteCard.innerHTML = `
                 <div class="site-header">
-                    <span class="site-title">站点 ${siteCount}</span>
+                    <span class="site-title">站点 ${siteCount} <span class="site-type-tag ${siteType}">${siteType === 'sub2api' ? 'Sub2API' : 'NewAPI'}</span></span>
                     <div class="site-actions">
+                        <div class="site-type-toggle" title="切换站点类型">
+                            <button type="button" class="${siteType === 'newapi' ? 'active' : ''}" onclick="switchSiteType(${siteCount}, 'newapi')">NewAPI</button>
+                            <button type="button" class="${siteType === 'sub2api' ? 'active' : ''}" onclick="switchSiteType(${siteCount}, 'sub2api')">Sub2API</button>
+                        </div>
                         ${siteCount > 1 ? `<button class="btn btn-danger btn-xs" onclick="removeSite(${siteCount})">删除站点</button>` : ''}
                     </div>
                 </div>
@@ -4280,12 +4256,10 @@
                                 <input type="text" id="site-url-${siteCount}" placeholder="https://api.example.com">
                                 <button class="url-jump-btn" onclick="jumpToUrl(${siteCount})" title="跳转到该站点">↗</button>
                             </div>
-                            <small>完整的站点地址，同站点下所有账号共享此 URL</small>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group site-cf-field newapi-fields">
                             <label>CF Clearance（可选）</label>
                             <input type="text" id="site-cfclearance-${siteCount}" placeholder="xxsCgaPMM...">
-                            <small>站点级 Cloudflare 防护 Cookie，同站点共享</small>
                         </div>
                     </div>
 
@@ -4304,6 +4278,18 @@
             addAccountToSite(siteCount);
         }
 
+        function switchSiteType(siteId, type) {
+            const card = document.getElementById(`site-${siteId}`);
+            if (!card) return;
+            card.dataset.type = type;
+            const tag = card.querySelector('.site-type-tag');
+            tag.className = `site-type-tag ${type}`;
+            tag.textContent = type === 'sub2api' ? 'Sub2API' : 'NewAPI';
+            card.querySelectorAll('.site-type-toggle button').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase() === type);
+            });
+        }
+
         function addAccountToSite(siteId) {
             siteAccountCounts[siteId]++;
             const accIdx = siteAccountCounts[siteId];
@@ -4315,9 +4301,12 @@
             accItem.innerHTML = `
                 <div class="account-item-header">
                     <span class="account-item-title">账号 ${accIdx}</span>
-                    ${accIdx > 1 ? `<button class="btn btn-danger btn-xs" onclick="removeAccountFromSite(${siteId}, ${accIdx})">删除</button>` : ''}
+                    <span style="display:flex;align-items:center;gap:8px;">
+                        <input type="text" id="acc-name-${siteId}-${accIdx}" placeholder="备注名称" style="width:160px;padding:6px 10px;font-size:12px;border-radius:8px;border:1px solid rgba(148,163,184,0.3);background:rgba(148,163,184,0.08);color:inherit;outline:none;">
+                        ${accIdx > 1 ? `<button class="btn btn-danger btn-xs" onclick="removeAccountFromSite(${siteId}, ${accIdx})">删除</button>` : ''}
+                    </span>
                 </div>
-                <div class="account-fields">
+                <div class="account-fields newapi-fields">
                     <div class="form-group">
                         <label>Session <span style="color: #94a3b8;">(与令牌二选一)</span></label>
                         <input type="text" id="acc-session-${siteId}-${accIdx}" placeholder="MTc2NzQxMzYzM3...">
@@ -4325,27 +4314,38 @@
                     <div class="form-group">
                         <label>系统访问令牌 <span style="color: #94a3b8;">(可选，推荐)</span></label>
                         <input type="text" id="acc-access-token-${siteId}-${accIdx}" placeholder="粘贴系统访问令牌，如 Y13BF+k/... ">
-                        <small class="hint-amber">获取方式：登录站点 → 右上角头像 → 个人设置 → 系统访问令牌 → 生成并复制</small>
                     </div>
                     <div class="form-group">
                         <label>用户ID <span class="required">*</span></label>
                         <input type="text" id="acc-userid-${siteId}-${accIdx}" placeholder="123">
                     </div>
-                    <div class="form-group">
-                        <label>备注名称</label>
-                        <input type="text" id="acc-name-${siteId}-${accIdx}" placeholder="主力站 / 备用站">
-                    </div>
                 </div>
-                <div class="account-login-fields" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
+                <div class="account-login-fields newapi-fields" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
                     <div class="form-group" style="margin-bottom: 0;">
                         <label>登录账号（可选）</label>
                         <input type="text" id="acc-login-user-${siteId}-${accIdx}" placeholder="session失效时用于重新获取">
-                        <small style="color: rgba(245, 158, 11, 0.7);">session过期时自动登录</small>
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
                         <label>登录密码（可选）</label>
                         <input type="password" id="acc-login-pass-${siteId}-${accIdx}" placeholder="留空则不尝试自动登录">
-                        <small style="color: rgba(245, 158, 11, 0.7);">如果没填，session失效直接报错</small>
+                    </div>
+                </div>
+                <div class="account-fields sub2api-fields">
+                    <div class="form-group">
+                        <label>邮箱 <span class="required">*</span></label>
+                        <input type="text" id="acc-email-${siteId}-${accIdx}" placeholder="your@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label>密码</label>
+                        <input type="password" id="acc-password-${siteId}-${accIdx}" placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                        <label>Access Token <span style="color: #94a3b8;">(可选)</span></label>
+                        <input type="text" id="acc-sub2api-token-${siteId}-${accIdx}" placeholder="eyJhbGciOi...">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Refresh Token <span style="color: #94a3b8;">(可选)</span></label>
+                        <input type="text" id="acc-refresh-token-${siteId}-${accIdx}" placeholder="用于自动续期">
                     </div>
                 </div>
             `;
@@ -4386,47 +4386,6 @@
             }
         }
 
-        // ─── 站点一键抓取书签 ─────────────────────────────────────
-
-        const BOOKMARKLET_SRC = [
-            "(function(){",
-            "var origin=location.origin;",
-            "var uid=null;",
-            "try{var u=JSON.parse(localStorage.getItem('user')||'null');if(u&&u.id)uid=u.id;}catch(e){}",
-            "var go=function(cfg){",
-            "try{navigator.clipboard.writeText(cfg);}catch(e){}",
-            "if(confirm('已抓取站点配置，点击确定打开本地配置页面并自动回填：')){",
-            "window.open('" + location.origin + location.pathname + "#bm='+encodeURIComponent(cfg),'_blank');",
-            "}",
-            "};",
-            "fetch(origin+'/api/user/self',{credentials:'include'})",
-            ".then(function(r){return r.json();})",
-            ".then(function(self){",
-            "if(self&&self.success&&self.data&&self.data.id){uid=self.data.id;}",
-            "return fetch(origin+'/api/user/token',{credentials:'include'}).then(function(r){return r.json();});",
-            "})",
-            ".then(function(tok){",
-            "var token=(tok&&tok.success&&tok.data)?tok.data:'';",
-            "var cfg=JSON.stringify([{url:origin,session:'',access_token:token,user_id:String(uid||''),name:location.hostname}]);",
-            "go(cfg);",
-            "})",
-            ".catch(function(e){alert('抓取失败: '+(e.message||e));});",
-            "})();"
-        ].join(' ');
-
-        function buildBookmarkletHref() {
-            return 'javascript:' + encodeURIComponent(BOOKMARKLET_SRC);
-        }
-
-        function copyBookmarklet() {
-            const code = decodeURIComponent(buildBookmarkletHref().replace(/^javascript:/, ''));
-            navigator.clipboard.writeText('javascript:' + code).then(() => {
-                showCloudStatus('success', '✅ 书签代码已复制：新建一个收藏夹书签，名称随意，网址粘贴这段代码');
-            }).catch(() => {
-                showCloudStatus('error', '❌ 复制失败，请手动展开下方代码复制');
-            });
-        }
-
         function importFromData(accounts, sourceName) {
             if (!Array.isArray(accounts) || !accounts.length) {
                 alert('⚠️ ' + sourceName + ' 中没有有效的账号数据');
@@ -4434,8 +4393,9 @@
             }
             for (let i = 0; i < accounts.length; i++) {
                 const acc = accounts[i];
-                if (!acc.url || (!acc.session && !acc.access_token)) {
-                    alert(`⚠️ 第 ${i + 1} 个账号缺少 url，且 session 与 access_token 至少需要一个`);
+                const hasCred = acc.session || acc.access_token || acc.email || acc.refresh_token;
+                if (!acc.url || !hasCred) {
+                    alert(`⚠️ 第 ${i + 1} 个账号缺少 url，且 session / access_token / email / refresh_token 至少需要一个`);
                     return;
                 }
             }
@@ -4456,78 +4416,6 @@
                 alert('❌ 无法读取剪贴板（浏览器可能未授权）：' + e.message + '\n可改用「📋 导入 JSON」手动粘贴');
             });
         }
-
-        // 书签回填：#bm=<URL编码的账号JSON>
-        // 多站点暂存：每次抓取按 url 合并进 localStorage 暂存区，
-        // 表单回填全部暂存站点——可以连续去多个站点点书签再一起保存
-        const BM_STASH_KEY = 'newapi_bm_stash';
-
-        function loadBookmarkStash() {
-            try { return JSON.parse(localStorage.getItem(BM_STASH_KEY) || '[]'); }
-            catch (e) { return []; }
-        }
-
-        function saveBookmarkStash(stash) {
-            localStorage.setItem(BM_STASH_KEY, JSON.stringify(stash.slice(-12)));
-        }
-
-        function updateBookmarkStashUI() {
-            const stash = loadBookmarkStash();
-            const info = document.getElementById('bm-stash-info');
-            if (!info) return;
-            if (!stash.length) {
-                info.innerHTML = '📭 暂存区为空：去任意已登录的 NewAPI 站点点击书签即可抓取';
-                document.getElementById('bm-refill-btn').style.display = 'none';
-                document.getElementById('bm-clear-btn').style.display = 'none';
-            } else {
-                const names = stash.map(a => a.name || a.url.replace(/^https?:\/\//, '')).join('、');
-                info.innerHTML = `📦 暂存 <strong>${stash.length}</strong> 个站点：${names}`;
-                document.getElementById('bm-refill-btn').style.display = '';
-                document.getElementById('bm-clear-btn').style.display = '';
-            }
-        }
-
-        function refillBookmarkStash() {
-            const stash = loadBookmarkStash();
-            if (!stash.length) { alert('📭 暂存区为空：先去站点上点书签抓取'); return; }
-            importFromData(stash, '抓取暂存');
-        }
-
-        function clearBookmarkStash() {
-            if (!confirm('确定清空抓取暂存？不影响已保存的配置')) return;
-            localStorage.removeItem(BM_STASH_KEY);
-            updateBookmarkStashUI();
-        }
-
-        (function handleBookmarkHash() {
-            const m = (location.hash || '').match(/^#bm=(.+)$/);
-            if (!m) { updateBookmarkStashUI(); return; }
-            let stash = loadBookmarkStash();
-            try {
-                const fresh = JSON.parse(decodeURIComponent(m[1]));
-                let added = 0, updated = 0;
-                fresh.forEach(acc => {
-                    if (!acc.url) return;
-                    const i = stash.findIndex(x => x.url === acc.url);
-                    if (i >= 0) { stash[i] = acc; updated++; } else { stash.push(acc); added++; }
-                });
-                localStorage.setItem(BM_STASH_KEY, JSON.stringify(stash.slice(-12)));
-                loadFlatData(stash);
-                saveToLocal();
-                updateBookmarkStashUI();
-                alert(`🧷 书签抓取完成：新增 ${added} 个、更新 ${updated} 个站点，暂存共 ${stash.length} 个已全部回填表单`);
-            } catch (e) {
-                alert('❌ 书签数据解析失败：' + e.message);
-            } finally {
-                history.replaceState(null, '', location.pathname);
-            }
-        })();
-
-        // 初始化书签链接
-        (function initBookmarklet() {
-            const link = document.getElementById('bookmarklet-link');
-            if (link) link.href = buildBookmarkletHref();
-        })();
 
         // ─── 站点防护探测 ─────────────────────────────────────
 
@@ -4573,10 +4461,13 @@
                 });
         }
 
-        // 站点 URL 填写/修改后自动探测
+        // 站点 URL 填写/修改后自动探测（仅 NewAPI 站点，Sub2API 的 /api/status 不适用）
         document.addEventListener('change', function (e) {
             if (e.target && /^site-url-\d+$/.test(e.target.id || '')) {
-                probeSiteProtection(e.target.id.split('-')[2]);
+                const siteId = e.target.id.split('-')[2];
+                const card = document.getElementById(`site-${siteId}`);
+                if (card && card.dataset.type === 'sub2api') return;
+                probeSiteProtection(siteId);
             }
         });
 
@@ -4588,8 +4479,8 @@
             siteCards.forEach(card => {
                 if (hasError) return;
                 const siteId = card.id.split('-')[1];
+                const siteType = card.dataset.type || 'newapi';
                 const url = document.getElementById(`site-url-${siteId}`).value.trim();
-                const cfClearance = document.getElementById(`site-cfclearance-${siteId}`).value.trim();
 
                 if (!url) {
                     alert(`站点 ${siteId}: URL 不能为空`);
@@ -4611,12 +4502,38 @@
                     const parts = item.id.split('-');
                     const sId = parts[1];
                     const aId = parts[2];
+                    const name = document.getElementById(`acc-name-${sId}-${aId}`).value.trim();
+
+                    if (siteType === 'sub2api') {
+                        const email = document.getElementById(`acc-email-${sId}-${aId}`).value.trim();
+                        const password = document.getElementById(`acc-password-${sId}-${aId}`).value.trim();
+                        const accessToken = document.getElementById(`acc-sub2api-token-${sId}-${aId}`)?.value.trim() || '';
+                        const refreshToken = document.getElementById(`acc-refresh-token-${sId}-${aId}`)?.value.trim() || '';
+
+                        if (!email && !accessToken && !refreshToken) {
+                            alert(`站点 ${siteId} 账号 ${aId}: 邮箱、Access Token、Refresh Token 至少填一个`);
+                            hasError = true;
+                            return;
+                        }
+
+                        const account = {
+                            url: fullUrl,
+                            name: name || `站点${siteId}-账号${aId}`
+                        };
+                        if (email) account.email = email;
+                        if (password) account.password = password;
+                        if (accessToken) account.access_token = accessToken;
+                        if (refreshToken) account.refresh_token = refreshToken;
+                        accounts.push(account);
+                        return;
+                    }
+
                     const session = document.getElementById(`acc-session-${sId}-${aId}`).value.trim();
                     const accessToken = document.getElementById(`acc-access-token-${sId}-${aId}`)?.value.trim() || '';
                     const userId = document.getElementById(`acc-userid-${sId}-${aId}`).value.trim();
-                    const name = document.getElementById(`acc-name-${sId}-${aId}`).value.trim();
                     const loginUser = document.getElementById(`acc-login-user-${sId}-${aId}`)?.value.trim() || '';
                     const loginPass = document.getElementById(`acc-login-pass-${sId}-${aId}`)?.value.trim() || '';
+                    const cfClearance = document.getElementById(`site-cfclearance-${siteId}`)?.value.trim() || '';
 
                     if ((!session && !accessToken) || !userId) {
                         alert(`站点 ${siteId} 账号 ${aId}: Session 与 系统访问令牌 至少填一个，用户ID 不能为空`);
@@ -4653,7 +4570,10 @@
             if (hasError || accounts.length === 0) return;
 
             document.getElementById('json-output').textContent = JSON.stringify(accounts, null, 2);
-            document.getElementById('simple-output').textContent = accounts.map(acc => `${acc.url}#${acc.session}${acc.access_token ? '#' + acc.access_token : ''}`).join(',');
+            document.getElementById('simple-output').textContent = accounts.map(acc =>
+                acc.email ? `${acc.url}#${acc.email}${acc.password ? '#' + acc.password : ''}`
+                          : `${acc.url}#${acc.session}${acc.access_token ? '#' + acc.access_token : ''}`
+            ).join(',');
 
             document.getElementById('result').style.display = 'block';
             document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
@@ -4741,26 +4661,44 @@
             const sites = [];
             document.querySelectorAll('.site-card').forEach(card => {
                 const siteId = card.id.split('-')[1];
+                const siteType = card.dataset.type || 'newapi';
                 const url = document.getElementById(`site-url-${siteId}`).value.trim();
-                const cfClearance = document.getElementById(`site-cfclearance-${siteId}`).value.trim();
+                const cfClearance = document.getElementById(`site-cfclearance-${siteId}`)?.value.trim() || '';
 
                 const accs = [];
                 card.querySelectorAll('.account-item').forEach(item => {
                     const parts = item.id.split('-');
                     const sId = parts[1];
                     const aId = parts[2];
-                    accs.push({
-                        session: document.getElementById(`acc-session-${sId}-${aId}`).value.trim(),
-                        accessToken: document.getElementById(`acc-access-token-${sId}-${aId}`)?.value.trim() || '',
-                        userId: document.getElementById(`acc-userid-${sId}-${aId}`).value.trim(),
-                        name: document.getElementById(`acc-name-${sId}-${aId}`).value.trim(),
-                        loginUser: document.getElementById(`acc-login-user-${sId}-${aId}`)?.value.trim() || '',
-                        loginPass: document.getElementById(`acc-login-pass-${sId}-${aId}`)?.value.trim() || ''
-                    });
+                    const name = document.getElementById(`acc-name-${sId}-${aId}`).value.trim();
+
+                    if (siteType === 'sub2api') {
+                        accs.push({
+                            type: 'sub2api',
+                            email: document.getElementById(`acc-email-${sId}-${aId}`).value.trim(),
+                            password: document.getElementById(`acc-password-${sId}-${aId}`).value.trim(),
+                            accessToken: document.getElementById(`acc-sub2api-token-${sId}-${aId}`)?.value.trim() || '',
+                            refreshToken: document.getElementById(`acc-refresh-token-${sId}-${aId}`)?.value.trim() || '',
+                            name
+                        });
+                    } else {
+                        accs.push({
+                            type: 'newapi',
+                            session: document.getElementById(`acc-session-${sId}-${aId}`).value.trim(),
+                            accessToken: document.getElementById(`acc-access-token-${sId}-${aId}`)?.value.trim() || '',
+                            userId: document.getElementById(`acc-userid-${sId}-${aId}`).value.trim(),
+                            name,
+                            loginUser: document.getElementById(`acc-login-user-${sId}-${aId}`)?.value.trim() || '',
+                            loginPass: document.getElementById(`acc-login-pass-${sId}-${aId}`)?.value.trim() || ''
+                        });
+                    }
                 });
 
-                if (url || cfClearance || accs.some(a => a.session || a.accessToken || a.userId || a.name)) {
-                    sites.push({ url, cfClearance, accounts: accs });
+                const hasAny = url || cfClearance || accs.some(a =>
+                    Object.keys(a).some(k => k !== 'type' && a[k])
+                );
+                if (hasAny) {
+                    sites.push({ url, cfClearance, type: siteType, accounts: accs });
                 }
             });
             return sites;
@@ -4799,24 +4737,38 @@
             siteCount = 0;
 
             sites.forEach(site => {
-                addSite();
+                const siteType = site.type === 'sub2api' ? 'sub2api' : 'newapi';
+                addSite(siteType);
                 const sid = siteCount;
                 document.getElementById(`site-url-${sid}`).value = site.url || '';
-                document.getElementById(`site-cfclearance-${sid}`).value = site.cfClearance || '';
+                const cfEl = document.getElementById(`site-cfclearance-${sid}`);
+                if (cfEl) cfEl.value = site.cfClearance || '';
 
                 if (site.accounts && site.accounts.length > 0) {
                     site.accounts.forEach((acc, i) => {
                         if (i > 0) addAccountToSite(sid);
                         const aid = siteAccountCounts[sid];
-                        document.getElementById(`acc-session-${sid}-${aid}`).value = acc.session || '';
-                        const accessTokenEl = document.getElementById(`acc-access-token-${sid}-${aid}`);
-                        if (accessTokenEl) accessTokenEl.value = acc.accessToken || acc.access_token || '';
-                        document.getElementById(`acc-userid-${sid}-${aid}`).value = acc.userId || '';
+
+                        if (siteType === 'sub2api') {
+                            const emailEl = document.getElementById(`acc-email-${sid}-${aid}`);
+                            const passEl = document.getElementById(`acc-password-${sid}-${aid}`);
+                            const tokEl = document.getElementById(`acc-sub2api-token-${sid}-${aid}`);
+                            const refEl = document.getElementById(`acc-refresh-token-${sid}-${aid}`);
+                            if (emailEl) emailEl.value = acc.email || '';
+                            if (passEl) passEl.value = acc.password || '';
+                            if (tokEl) tokEl.value = acc.accessToken || acc.access_token || '';
+                            if (refEl) refEl.value = acc.refreshToken || acc.refresh_token || '';
+                        } else {
+                            document.getElementById(`acc-session-${sid}-${aid}`).value = acc.session || '';
+                            const accessTokenEl = document.getElementById(`acc-access-token-${sid}-${aid}`);
+                            if (accessTokenEl) accessTokenEl.value = acc.accessToken || acc.access_token || '';
+                            document.getElementById(`acc-userid-${sid}-${aid}`).value = acc.userId || '';
+                            const loginUserEl = document.getElementById(`acc-login-user-${sid}-${aid}`);
+                            const loginPassEl = document.getElementById(`acc-login-pass-${sid}-${aid}`);
+                            if (loginUserEl) loginUserEl.value = acc.loginUser || '';
+                            if (loginPassEl) loginPassEl.value = acc.loginPass || '';
+                        }
                         document.getElementById(`acc-name-${sid}-${aid}`).value = acc.name || '';
-                        const loginUserEl = document.getElementById(`acc-login-user-${sid}-${aid}`);
-                        const loginPassEl = document.getElementById(`acc-login-pass-${sid}-${aid}`);
-                        if (loginUserEl) loginUserEl.value = acc.loginUser || '';
-                        if (loginPassEl) loginPassEl.value = acc.loginPass || '';
                     });
                 }
             });
@@ -4825,11 +4777,25 @@
         function loadFlatData(flatAccounts) {
             const grouped = {};
             flatAccounts.forEach(acc => {
-                const key = (acc.url || '') + '|' + (acc.cfClearance || acc.cf_clearance || '');
+                const isSub2api = !!(acc.email || acc.refresh_token || (acc.password && !acc.session));
+                const key = (acc.url || '') + '|' + (acc.cfClearance || acc.cf_clearance || '') + '|' + (isSub2api ? 'sub2api' : 'newapi');
                 if (!grouped[key]) {
-                    grouped[key] = { url: acc.url || '', cfClearance: acc.cfClearance || acc.cf_clearance || '', accounts: [] };
+                    grouped[key] = {
+                        url: acc.url || '',
+                        cfClearance: acc.cfClearance || acc.cf_clearance || '',
+                        type: isSub2api ? 'sub2api' : 'newapi',
+                        accounts: []
+                    };
                 }
-                grouped[key].accounts.push({
+                grouped[key].accounts.push(isSub2api ? {
+                    type: 'sub2api',
+                    email: acc.email || '',
+                    password: acc.password || '',
+                    accessToken: acc.accessToken || acc.access_token || '',
+                    refreshToken: acc.refreshToken || acc.refresh_token || '',
+                    name: acc.name || ''
+                } : {
+                    type: 'newapi',
                     session: acc.session || '',
                     accessToken: acc.accessToken || acc.access_token || '',
                     userId: acc.userId || acc.user_id || '',
@@ -4865,8 +4831,9 @@
 
                 for (let i = 0; i < accounts.length; i++) {
                     const acc = accounts[i];
-                    if (!acc.url || (!acc.session && !acc.access_token)) {
-                        alert(`⚠️ 第 ${i + 1} 个账号缺少 url，且 session 与 access_token 至少需要一个`);
+                    const hasCred = acc.session || acc.access_token || acc.email || acc.refresh_token;
+                    if (!acc.url || !hasCred) {
+                        alert(`⚠️ 第 ${i + 1} 个账号缺少 url，且 session / access_token / email / refresh_token 至少需要一个`);
                         return;
                     }
                 }
@@ -5087,36 +5054,6 @@
 
         initCloudAutoSave();
 
-        (function detectProtocol() {
-            const protocol = window.location.protocol;
-            const noticeEl = document.getElementById('cors-notice');
-            const titleEl = document.getElementById('cors-notice-title');
-            const tipsEl = document.getElementById('cors-notice-tips');
-            const isChrome = /Chrome\//.test(navigator.userAgent) && !/Edg\//.test(navigator.userAgent);
-            const isLocal = ['127.0.0.1', 'localhost'].includes(window.location.hostname);
-
-            if (isLocal) {
-                // 本地 serve.py 模式：云端请求走同源代理，无 CORS 限制
-                noticeEl.className = 'notice';
-                noticeEl.querySelector('.cors-icon').textContent = '✅';
-                noticeEl.style.display = 'flex';
-                titleEl.innerHTML = '本地模式：云端同步已通过 <strong>serve.py 代理</strong>直连 WebDAV，无 CORS 限制。';
-                tipsEl.innerHTML = '直接填写 WebDAV 地址和认证信息即可同步；也可以用 <strong>sync_config.py</strong> 命令行推拉配置。';
-            } else if (protocol === 'file:') {
-                if (isChrome) {
-                    noticeEl.style.display = 'flex';
-                    titleEl.textContent = 'Chrome 本地打开仍受跨域限制，无法直接请求 HTTPS 地址。';
-                    tipsEl.innerHTML = '推荐运行 <strong>python serve.py</strong> 后从 127.0.0.1:8765 打开本页（本地代理，无 CORS），或在云端同步中启用 <strong>CORS 代理</strong>，或使用 <strong>Firefox</strong> 打开本文件。';
-                } else {
-                    noticeEl.style.display = 'none';
-                }
-            } else {
-                noticeEl.style.display = 'flex';
-                titleEl.textContent = '当前页面以网络协议运行，云端同步受 CORS 跨域限制。';
-                tipsEl.innerHTML = '推荐运行 <strong>python serve.py</strong> 后从 127.0.0.1:8765 打开本页（本地代理，无 CORS），或 <a href="javascript:void(0)" onclick="downloadThisPage()" style="color:#0284c7;">下载到本地</a>。群晖/NextCloud 可在服务端配置 CORS 头。';
-            }
-        })();
-
         // ─── CORS Proxy Picker ─────────────────────────────────────
 
         const CORS_PROXIES = [
@@ -5269,19 +5206,6 @@
         }
 
         // ─── 下载页面代码（恢复逻辑已移至 loadCloudConfigFromLocal）──
-
-        function downloadThisPage() {
-            const html = document.documentElement.outerHTML;
-            const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'config_generator.html';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
 
         // 云端请求通道: 本地运行 serve.py 时通过同源代理转发到 WebDAV（彻底绕开 CORS）
         const CLOUD_VIA_PROXY = (location.hostname === '127.0.0.1' || location.hostname === 'localhost');
