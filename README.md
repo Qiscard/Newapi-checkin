@@ -5,7 +5,8 @@
 ## ✨ 功能特性
 
 - ✅ 支持单账号/多账号签到
-- ✅ **支持多个不同网站**（只要是基于 NewAPI 搭建的站点）
+- ✅ **支持多个不同网站**（NewAPI 与 Sub2API 站点可混合配置）
+- ✅ **Sub2API 站点支持**（`/api/v1/ext/checkin` 协议，邮箱/密码/Token 三种认证，自动续期）
 - ✅ HTTP 直连，无需浏览器
 - ✅ GitHub Actions 自动化执行
 - ✅ 详细的签到日志输出
@@ -387,6 +388,8 @@ schedule:
 | `SMTP_TO` | 收件邮箱地址 | 是 |
 
 > **提示：** 使用 QQ 邮箱等需开启 SMTP 服务并获取授权码，非登录密码。
+>
+> **兼容性：** 也支持 `EMAIL_SMTP_HOST` / `EMAIL_SMTP_PORT` / `EMAIL_USER` / `EMAIL_PASS` / `EMAIL_TO` / `EMAIL_FROM` 这套旧命名，两套任选其一即可（`SMTP_*` 优先读取）。
 
 ---
 
@@ -529,6 +532,45 @@ schedule:
 | `URL#SESSION` | 单账号 | `https://api.example.com#MTc2NzQx...` |
 | `URL1#SESSION1,URL2#SESSION2` | 多网站/多账号（逗号分隔） | `https://a.com#sess1,https://b.com#sess2` |
 | JSON 数组 | 支持备注名称、用户ID和自动登录凭证（推荐） | 见下文 JSON 格式示例 |
+| JSON 数组（Sub2API） | 邮箱 / 密码 / Access Token / Refresh Token | 见下文 Sub2API 示例 |
+
+### 🍃 Sub2API 站点配置
+
+除 NewAPI 外，脚本也支持 **Sub2API** 站点（如 `ai.yezi.help:2053`）。
+两者协议不同，脚本会根据配置字段自动判断类型：
+
+- 含 `session` / `user_id` / `cf_clearance` → 按 **NewAPI** 处理（`/api/user/checkin`）
+- 含 `email` / `refresh_token`（且无 session）→ 按 **Sub2API** 处理（`/api/v1/ext/checkin`）
+
+也可显式指定：`"type": "sub2api"` 或 `"type": "newapi"`。
+
+**Sub2API 配置示例：**
+
+```json
+[
+  {
+    "url": "https://ai.yezi.help:2053",
+    "email": "your@email.com",
+    "password": "your_password",
+    "refresh_token": "rt_xxxxx",
+    "name": "叶子"
+  }
+]
+```
+
+| 字段 | 说明 | 是否必须 |
+|------|------|----------|
+| `url` | 站点地址 | 是 |
+| `email` | 登录邮箱 | 与 token 二选一 |
+| `password` | 登录密码 | 与 email 配对 |
+| `access_token` | 访问令牌（有效期短） | 可选 |
+| `refresh_token` | 续期令牌（推荐，寿命最长） | 可选 |
+| `name` | 备注名称 | 否 |
+
+**认证优先级：** `access_token`（校验有效则直接用）→ `refresh_token` 续期 → `email`+`password` 登录。
+token 失效时会自动尝试恢复，无需手动干预。
+
+> **提示：** Sub2API 站点签到成功后返回的是**余额**（如 `+5.18`），不是 NewAPI 的 token 额度。
 
 ### 多网站配置示例
 

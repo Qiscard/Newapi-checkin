@@ -34,10 +34,13 @@ jobs:
           DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
           DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
           SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
-          EMAIL_SMTP_HOST: ${{ secrets.EMAIL_SMTP_HOST }}
-          EMAIL_SMTP_PORT: ${{ secrets.EMAIL_SMTP_PORT }}
-          EMAIL_USER: ${{ secrets.EMAIL_USER }}
-          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
-          EMAIL_TO: ${{ secrets.EMAIL_TO }}
-          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
-        run: python checkin.py
+          # 邮件通知：兼容 EMAIL_* 与 SMTP_* 两套 Secret 命名
+          EMAIL_SMTP_HOST: ${{ secrets.EMAIL_SMTP_HOST || secrets.SMTP_HOST }}
+          EMAIL_SMTP_PORT: ${{ secrets.EMAIL_SMTP_PORT || secrets.SMTP_PORT }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER || secrets.SMTP_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS || secrets.SMTP_PASS }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO || secrets.SMTP_TO }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM || secrets.SMTP_USER }}
+          NOTIFY_ONLY_FAILURE: ${{ secrets.NOTIFY_ONLY_FAILURE }}
+        # xvfb-run 提供虚拟 X server，否则 Playwright 有头模式无法启动
+        run: xvfb-run --auto-servernum python checkin.py

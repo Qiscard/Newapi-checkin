@@ -9,6 +9,7 @@ import os
 import sys
 import json
 import time
+import re
 import requests
 from datetime import datetime
 from typing import Optional
@@ -554,6 +555,225 @@ class NewAPICheckin:
             return None
 
 
+class Sub2APICheckin:
+    """Sub2API 站点签到客户端
+
+    协议（基于对 Sub2API v2.22.0 前端的逆向）：
+        登录   POST /api/v1/auth/login    {email, password}      -> access_token / refresh_token / expires_in
+        续期   POST /api/v1/auth/refresh  {refresh_token}        -> 新的 token 三元组
+        用户   GET  /api/v1/auth/me                              -> user.balance
+        状态   GET  /api/v1/ext/checkin/status?timezone=...      -> enabled / checked_in / reward_amount
+        签到   POST /api/v1/ext/checkin                          -> reward_amount
+
+    统一响应体 {code, message, data}，code == 0 表示成功。
+    """
+
+    API_PREFIX = '/api/v1'
+    TIMEZONE = 'Asia/Shanghai'
+
+    def __init__(self, base_url: str, email: str = '', password: str = '',
+                 access_token: str = '', refresh_token: str = '',
+                 name: str = '', timeout: int = 30):
+        self.base_url = (base_url or '').strip().rstrip('/')
+        if self.base_url and not re.match(r'^https?://', self.base_url):
+            self.base_url = 'https://' + self.base_url
+        self.email = email or ''
+        self.password = password or ''
+        self.access_token = access_token or ''
+        self.refresh_token = refresh_token or ''
+        self.name = name
+        self.timeout = timeout
+        self.session = requests.Session()
+        self.session.headers.update({
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'User-Agent': ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                           '(KHTML, like Gecko) Chrome/120.0 Safari/537.36'),
+        })
+        self.user = None
+        self.token_refreshed = False
+        self.new_refresh_token = None
+
+    # ---------------------------------------------------------------- 工具
+
+    def _api(self, path: str) -> str:
+        return f'{self.base_url}{self.API_PREFIX}{path}'
+
+    def _request(self, method: str, path: str, payload=None, auth: bool = True) -> dict:
+        headers = {}
+        if auth and self.access_token:
+            headers['Authorization'] = f'Bearer {self.access_token}'
+        try:
+            resp = self.session.request(
+                method, self._api(path),
+                json=payload,
+                headers=headers,
+                timeout=self.timeout,
+            )
+        except requests.exceptions.Timeout:
+            raise RuntimeError('请求超时')
+        except requests.exceptions.RequestException as e:
+            raise RuntimeError(f'网络请求失败: {e}')
+
+        try:
+            body = resp.json()
+        except ValueError:
+            raise RuntimeError(f'响应不是 JSON (HTTP {resp.status_code}): {resp.text[:200]}')
+
+        if not isinstance(body, dict):
+            raise RuntimeError(f'响应格式异常: {str(body)[:200]}')
+
+        if 'code' in body:
+            if body.get('code') == 0:
+                return body.get('data') or {}
+            raise RuntimeError(f"[{body.get('code')}] {body.get('message') or '未知错误'}")
+        return body
+
+    def _apply_login(self, data: dict):
+        if not isinstance(data, dict) or not data.get('access_token'):
+            raise RuntimeError('登录响应中没有 access_token')
+        self.access_token = data['access_token']
+        if data.get('refresh_token'):
+            self.refresh_token = data['refresh_token']
+            self.new_refresh_token = data['refresh_token']
+        if data.get('user'):
+            self.user = data['user']
+
+    # ---------------------------------------------------------------- 认证
+
+    def login(self):
+        if not (self.email and self.password):
+            raise RuntimeError('未配置邮箱/密码，且没有可用的 access token')
+        data = self._request('POST', '/auth/login',
+                             {'email': self.email, 'password': self.password}, auth=False)
+        if isinstance(data, dict) and data.get('requires_2fa'):
+            raise RuntimeError('该账号已开启 2FA，请改用 access_token 方式')
+        self._apply_login(data)
+
+    def refresh(self):
+        if not self.refresh_token:
+            raise RuntimeError('没有可用的 refresh_token')
+        data = self._request('POST', '/auth/refresh',
+                             {'refresh_token': self.refresh_token}, auth=False)
+        self._apply_login(data)
+        self.token_refreshed = True
+
+    def _token_valid(self) -> bool:
+        try:
+            self._request('GET', '/auth/me')
+            return True
+        except Exception:
+            return False
+
+    def ensure_token(self):
+        """保证 access_token 可用：已配置 -> 校验 -> refresh -> 账号密码登录"""
+        if self.access_token:
+            if self._token_valid():
+                return
+            self.access_token = ''
+        if self.refresh_token:
+            try:
+                self.refresh()
+                return
+            except Exception:
+                pass
+        self.login()
+
+    def _authed_request(self, method: str, path: str, payload=None) -> dict:
+        try:
+            return self._request(method, path, payload)
+        except RuntimeError as e:
+            msg = str(e)
+            if 'INVALID_TOKEN' in msg or 'UNAUTHORIZED' in msg or '401' in msg:
+                # token 失效，尝试恢复一次
+                recovered = False
+                if self.refresh_token:
+                    try:
+                        self.refresh()
+                        recovered = True
+                    except Exception:
+                        pass
+                if not recovered and self.email and self.password:
+                    try:
+                        self.login()
+                        recovered = True
+                    except Exception:
+                        pass
+                if recovered:
+                    return self._request(method, path, payload)
+            raise
+
+    # ---------------------------------------------------------------- 业务
+
+    def get_user_info(self):
+        for path in ('/auth/me', '/user/profile'):
+            try:
+                data = self._authed_request('GET', path)
+                if isinstance(data, dict) and isinstance(data.get('user'), dict):
+                    self.user = data['user']
+                elif isinstance(data, dict) and ('id' in data or 'email' in data):
+                    self.user = data
+                else:
+                    continue
+                return self.user
+            except Exception:
+                continue
+        return None
+
+    def get_balance(self):
+        if not isinstance(self.user, dict):
+            return None
+        for key in ('balance', 'quota', 'credits'):
+            value = self.user.get(key)
+            if isinstance(value, (int, float)):
+                return float(value)
+        return None
+
+    def get_checkin_status(self) -> dict:
+        path = f'/ext/checkin/status?timezone={self.TIMEZONE.replace("/", "%2F")}'
+        return self._authed_request('GET', path) or {}
+
+    def checkin(self) -> dict:
+        """执行签到，返回 {success, message, reward_amount, already_done, disabled}"""
+        result = {'success': False, 'message': '', 'reward_amount': None,
+                  'already_done': False, 'disabled': False}
+        try:
+            data = self._authed_request('POST', '/ext/checkin')
+            amount = data.get('reward_amount') if isinstance(data, dict) else None
+            result.update(success=True, reward_amount=amount,
+                          message=f'签到成功，获得 {amount}')
+            return result
+        except Exception as e:
+            msg = str(e)
+            if 'CHECKIN_ALREADY_DONE' in msg or '已经签到' in msg:
+                result.update(success=True, already_done=True, message='今天已经签到过了')
+            elif 'CHECKIN_DISABLED' in msg or '暂未开放' in msg:
+                result.update(success=True, disabled=True, message='站点签到功能未开放')
+            else:
+                result['message'] = msg
+            return result
+
+    def get_checkin_history(self):
+        """Sub2API 无独立历史接口，用状态接口的累计信息兜底"""
+        return None
+
+
+def detect_site_type(item: dict) -> str:
+    """判断账号配置属于哪种站点类型
+
+    Sub2API: 有 email / refresh_token，或只有 access_token 且没有 session
+    NewAPI : 有 session，或有 user_id / cf_clearance
+    """
+    if item.get('type') in ('sub2api', 'newapi'):
+        return item['type']
+    if item.get('session') or item.get('user_id') or item.get('cf_clearance'):
+        return 'newapi'
+    if item.get('email') or item.get('refresh_token'):
+        return 'sub2api'
+    # 只有 access_token：无法从字段判断，交给后续探测
+    return 'unknown'
+
+
 def parse_accounts(accounts_str: str) -> list:
     """
     解析账号配置
@@ -562,6 +782,7 @@ def parse_accounts(accounts_str: str) -> list:
     1. 单账号: BASE_URL#SESSION_COOKIE 或 BASE_URL#SESSION_COOKIE#ACCESS_TOKEN
     2. 多账号: BASE_URL1#SESSION1,BASE_URL2#SESSION2
     3. JSON格式: [{"url": "...", "session": "...", "access_token": "..."}]
+       Sub2API: [{"url": "...", "email": "...", "password": "...", "refresh_token": "..."}]
     """
     accounts = []
 
@@ -572,28 +793,40 @@ def parse_accounts(accounts_str: str) -> list:
     try:
         data = json.loads(accounts_str)
         if isinstance(data, list):
-            for item in data:
-                if isinstance(item, dict) and 'url' in item and 'session' in item:
-                    account = {
-                        'url': item['url'],
-                        'session': item['session'],
-                        'name': item.get('name', '')
-                    }
-                    # 如果提供了 user_id，添加到账号信息中
-                    if 'user_id' in item:
-                        account['user_id'] = item['user_id']
-                    # 如果提供了 cf_clearance，添加到账号信息中
-                    if 'cf_clearance' in item:
-                        account['cf_clearance'] = item['cf_clearance']
-                    # 如果提供了登录账号密码，添加到账号信息中
-                    if 'login_username' in item:
-                        account['login_username'] = item['login_username']
-                    if 'login_password' in item:
-                        account['login_password'] = item['login_password']
-                    # 如果提供了系统访问令牌，添加到账号信息中
-                    if 'access_token' in item:
-                        account['access_token'] = item['access_token']
-                    accounts.append(account)
+            for idx, item in enumerate(data, 1):
+                if not isinstance(item, dict):
+                    print(f'[配置] 跳过第 {idx} 项：不是对象')
+                    continue
+                if not item.get('url'):
+                    print(f'[配置] 跳过第 {idx} 项：缺少 url')
+                    continue
+
+                site_type = detect_site_type(item)
+
+                # 凭证校验：至少要有一种可用凭证
+                has_cred = bool(
+                    item.get('session') or item.get('access_token')
+                    or (item.get('email') and item.get('password'))
+                    or item.get('refresh_token')
+                )
+                if not has_cred:
+                    print(f"[配置] 跳过 {item.get('name') or item['url']}："
+                          f"未提供任何凭证（session / access_token / email+password / refresh_token）")
+                    continue
+
+                account = {
+                    'url': item['url'],
+                    'session': item.get('session', ''),
+                    'name': item.get('name', ''),
+                    'site_type': site_type,
+                }
+                # 逐项保留可选字段
+                for key in ('user_id', 'cf_clearance', 'login_username', 'login_password',
+                            'access_token', 'email', 'password', 'refresh_token'):
+                    if item.get(key):
+                        account[key] = item[key]
+
+                accounts.append(account)
             return accounts
     except json.JSONDecodeError:
         pass
@@ -756,9 +989,140 @@ def build_advice(message: str) -> str:
     return ''
 
 
+def run_sub2api_account(account: dict) -> dict:
+    """执行单个 Sub2API 账号的签到，返回结果字典（供通知汇总使用）"""
+    name = account.get('name') or account.get('url', '')
+    url = account.get('url', '')
+    result = {
+        'name': name,
+        'success': False,
+        'message': '',
+        'quota_awarded': None,
+        'checkin_count': 0,
+        'lottery': [],
+        'site_type': 'sub2api',
+        'balance': None,
+    }
+
+    client = Sub2APICheckin(
+        base_url=url,
+        email=account.get('email', ''),
+        password=account.get('password', ''),
+        access_token=account.get('access_token', ''),
+        refresh_token=account.get('refresh_token', ''),
+        name=name,
+    )
+
+    try:
+        # 1. 认证
+        client.ensure_token()
+        if client.token_refreshed:
+            print('  认证: 已用 refresh_token 续期')
+
+        # 2. 用户信息
+        user = client.get_user_info()
+        if user:
+            label = user.get('email') or user.get('username') or '已登录'
+            masked = label[:3] + '***' if len(str(label)) > 3 else '***'
+            print(f'  用户: {masked}')
+        else:
+            print('  用户: 获取失败（不影响签到）')
+
+        # 3. 查询状态
+        status = client.get_checkin_status()
+        if not status.get('enabled'):
+            print('  结果: ⏭️ 站点签到功能未开放')
+            result.update(success=True, message='签到功能未开放')
+            result['balance'] = client.get_balance()
+            return result
+
+        if status.get('checked_in'):
+            amount = status.get('reward_amount')
+            print(f'  结果: ⏭️ 今日已签到（{amount}）')
+            result.update(success=True, message='今天已经签到过了', quota_awarded=amount)
+            result['balance'] = client.get_balance()
+            return result
+
+        # 4. 执行签到
+        checkin = client.checkin()
+        if checkin['success']:
+            if checkin['already_done']:
+                print('  结果: ⏭️ 今天已经签到过了')
+            elif checkin['disabled']:
+                print('  结果: ⏭️ 站点签到功能未开放')
+            else:
+                amount = checkin.get('reward_amount')
+                print(f'  结果: ✅ 签到成功')
+                if amount is not None:
+                    print(f'  奖励: +{amount} 余额')
+            result.update(
+                success=True,
+                message=checkin['message'],
+                quota_awarded=checkin.get('reward_amount'),
+            )
+        else:
+            message = checkin.get('message', '未知错误')
+            print(f'  结果: ❌ {message}')
+            advice = build_advice(message)
+            if advice:
+                print(f'  💡 建议: {advice}')
+            result.update(success=False, message=message, advice=advice)
+
+        # 刷新余额
+        client.user = None
+        client.get_user_info()
+        result['balance'] = client.get_balance()
+        if result['balance'] is not None:
+            print(f'  余额: {result["balance"]}')
+
+        # 记录轮换后的 refresh_token，便于本地回写
+        if client.new_refresh_token:
+            result['new_refresh_token'] = client.new_refresh_token
+
+    except requests.exceptions.Timeout:
+        print('  结果: ❌ 请求超时')
+        result.update(success=False, message='请求超时')
+    except requests.exceptions.RequestException as e:
+        print(f'  结果: ❌ 网络请求失败: {e}')
+        result.update(success=False, message=f'网络请求失败: {e}')
+    except Exception as e:
+        message = str(e)
+        print(f'  结果: ❌ {message}')
+        advice = build_advice(message)
+        if advice:
+            print(f'  💡 建议: {advice}')
+        result.update(success=False, message=message, advice=advice)
+
+    return result
+
+
+def normalize_env_aliases():
+    """兼容两套邮件环境变量命名（EMAIL_* 与 SMTP_*），避免用户配了却不生效"""
+    aliases = {
+        'EMAIL_SMTP_HOST': ('SMTP_HOST',),
+        'EMAIL_SMTP_PORT': ('SMTP_PORT',),
+        'EMAIL_USER': ('SMTP_USER',),
+        'EMAIL_PASS': ('SMTP_PASS',),
+        'EMAIL_TO': ('SMTP_TO',),
+        'EMAIL_FROM': ('SMTP_FROM',),
+    }
+    for target, sources in aliases.items():
+        if os.environ.get(target):
+            continue
+        for src in sources:
+            value = os.environ.get(src)
+            if value:
+                os.environ[target] = value
+                break
+    # EMAIL_FROM 缺省时回退到 EMAIL_USER
+    if not os.environ.get('EMAIL_FROM') and os.environ.get('EMAIL_USER'):
+        os.environ['EMAIL_FROM'] = os.environ['EMAIL_USER']
+
+
 def main():
     """主函数"""
     load_env_file()
+    normalize_env_aliases()
     import pytz
     beijing_tz = pytz.timezone('Asia/Shanghai')
     execution_time = datetime.now(beijing_tz).strftime("%Y-%m-%d %H:%M:%S")
@@ -810,16 +1174,31 @@ def main():
 
     for i, account in enumerate(accounts, 1):
         url = account['url']
-        session_cookie = account['session']
+        session_cookie = account.get('session', '')
         user_id = account.get('user_id')
         cf_clearance = account.get('cf_clearance')
         login_username = account.get('login_username')
         login_password = account.get('login_password')
         access_token = account.get('access_token')
         name = account.get('name') or f'账号{i}'
+        site_type = account.get('site_type', 'newapi')
 
         print(f'[{i}/{len(accounts)}] {name}')
         print(f'  站点: {NewAPICheckin._mask_url(url)}')
+
+        # ── Sub2API 站点走独立协议 ─────────────────────────────
+        if site_type == 'sub2api':
+            print('  类型: Sub2API')
+            sub_result = run_sub2api_account(account)
+            checkin_results.append(sub_result)
+            if sub_result['success']:
+                success_count += 1
+            else:
+                fail_count += 1
+            print()
+            continue
+
+        print('  类型: NewAPI')
         if user_id:
             print(f'  用户ID: {NewAPICheckin._mask_user_id(user_id)}')
 
@@ -963,11 +1342,11 @@ def main():
     elif os.environ.get('DINGTALK_WEBHOOK'):
         print('[警告] 已配置 DINGTALK_WEBHOOK 但无法导入通知模块')
 
-    # 发送邮件通知
-    if send_email_notification and os.environ.get('EMAIL_SMTP_HOST') and not (notify_only_fail and fail_count == 0):
+    # 发送邮件通知（无条件调用，缺参数时由 notifier 打印诊断信息）
+    if send_email_notification and not (notify_only_fail and fail_count == 0):
         print('正在发送邮件通知...')
         send_email_notification(checkin_results, execution_time)
-    elif os.environ.get('EMAIL_SMTP_HOST'):
+    elif not send_email_notification and os.environ.get('EMAIL_SMTP_HOST'):
         print('[警告] 已配置邮件参数但无法导入通知模块')
 
     # 发送 ServerChan 通知
