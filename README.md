@@ -391,6 +391,18 @@ schedule:
 >
 > **兼容性：** 也支持 `EMAIL_SMTP_HOST` / `EMAIL_SMTP_PORT` / `EMAIL_USER` / `EMAIL_PASS` / `EMAIL_TO` / `EMAIL_FROM` 这套旧命名，两套任选其一即可（`SMTP_*` 优先读取）。
 
+##### 邮件发送失败排查
+
+| 现象 | 原因 | 解决 |
+| --- | --- | --- |
+| `认证失败 (535)` | 密码填成了登录密码，或授权码已失效 | 到邮箱设置重新生成**授权码**并更新 Secret |
+| `Connection unexpectedly closed` | QQ 邮箱对错误凭据**直接断连**，不返回 535；也可能是出口 IP 被风控 | ① 确认用的是授权码且已开启 SMTP 服务；② 若本地正常、仅 Actions 失败，则为 IP 风控（见下） |
+| `Connection refused` / 超时 | 端口被封或主机名错误 | 检查 `SMTP_HOST` 拼写；尝试 465 与 587 |
+
+> **关于 GitHub Actions 与 QQ 邮箱：** Actions 运行在 AWS 等云厂商 IP 段，QQ 邮箱对境外/云 IP 的 SMTP 登录风控较严，常出现握手后被断开。
+> 脚本会自动尝试 465 → 587 回退。若两者均失败，建议改用 **钉钉机器人** 或 **Server酱**（走 HTTPS API，不受 SMTP 风控影响），
+> 或改用企业邮箱 / 邮件推送服务（如阿里云 DirectMail）。
+
 ---
 
 #### Server酱推送

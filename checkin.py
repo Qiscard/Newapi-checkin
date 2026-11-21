@@ -973,6 +973,10 @@ def load_env_file():
 def build_advice(message: str) -> str:
     """根据失败消息生成排查建议（随通知推送）"""
     m = message.lower()
+    # IP 段被站点全局封禁（常见于 AWS/GCP 等云厂商出口 IP）
+    if 'banned' in m or 'abuse' in m or 'has been banned globally' in m:
+        return ('站点已封禁云厂商出口 IP 段（如 AWS），GitHub Actions 无法访问。'
+                '请改用自建服务器/本地运行，或给请求配置代理出口')
     if 'turnstile' in m:
         return ('该站开启 Turnstile 人机验证，已自动点击求解；若反复失败，'
                 '建议本地运行一次 python checkin.py')
@@ -986,6 +990,8 @@ def build_advice(message: str) -> str:
                 '（更新后可运行 python sync_config.py push 同步到云端）')
     if 'session' in m or '过期' in m:
         return 'Session 已失效：可配置账号密码自动续期，或改用系统访问令牌（推荐）'
+    if '超时' in m or 'timeout' in m:
+        return '请求超时：站点可能响应缓慢或网络不通，可稍后重试'
     return ''
 
 

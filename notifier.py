@@ -164,6 +164,40 @@ def build_report_html(results: List[Dict[str, Any]], execution_time: str) -> str
     return html
 
 
+def _smtp_connect(host: str, port: int, timeout: int = 30):
+    """建立 SMTP 连接，返回已就绪的 server 对象"""
+    if port == 465:
+        server = smtplib.SMTP_SSL(host, port, timeout=timeout)
+    else:
+        server = smtplib.SMTP(host, port, timeout=timeout)
+        server.ehlo()
+        server.starttls()
+        server.ehlo()
+    return server
+
+
+def _try_send(host: str, port: int, user: str, password: str,
+              from_addr: str, to_addr: str, msg) -> tuple:
+    """尝试在指定端口发送，返回 (成功, 错误类型, 错误对象)"""
+    server = None
+    try:
+        server = _smtp_connect(host, port)
+        server.login(user, password)
+        server.sendmail(from_addr, [to_addr], msg.as_string())
+        server.quit()
+        return True, None, None
+    except smtplib.SMTPAuthenticationError as e:
+        if server:
+            try: server.close()
+            except Exception: pass
+        return False, 'auth', e
+    except Exception as e:
+        if server:
+            try: server.close()
+            except Exception: pass
+        return False, 'conn', e
+
+
 def send_email_notification(results: List[Dict[str, Any]], execution_time: Optional[str] = None) -> bool:
     """
     发送邮件通知
@@ -212,20 +246,38 @@ def send_email_notification(results: List[Dict[str, Any]], execution_time: Optio
     msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
     msg.attach(MIMEText(html_content, 'html', 'utf-8'))
 
-    try:
-        if port == 465:
-            server = smtplib.SMTP_SSL(host, port, timeout=30)
-        else:
-            server = smtplib.SMTP(host, port, timeout=30)
-            server.starttls()
-        server.login(user, password)
-        server.sendmail(from_addr, [to_addr], msg.as_string())
-        server.quit()
-        print(f'[邮件通知] 发送成功 -> {to_addr}')
-        return True
-    except Exception as e:
-        print(f'[邮件通知] 发送失败: {e}')
-        return False
+    # 首选配置端口，失败时按 465 <-> 587 回退重试一次
+    ports = [port]
+    fallback = 587 if port == 465 else 465
+    ports.append(fallback)
+
+    last_error = None
+    for idx, p in enumerate(ports):
+        ok, err_type, err = _try_send(host, p, user, password, from_addr, to_addr, msg)
+        if ok:
+            print(f'[邮件通知] 发送成功 -> {to_addr} (端口 {p})')
+            return True
+
+        if err_type == 'auth':
+            # 认证失败无需换端口重试
+            print(f'[邮件通知] 认证失败 ({getattr(err, "smtp_code", "?")})：账号或授权码不正确')
+            print('  💡 QQ/163 邮箱需使用「授权码」而非登录密码，并先在邮箱设置中开启 SMTP 服务')
+            print(f'  详情: {err}')
+            return False
+
+        last_error = (p, err)
+        if idx == 0:
+            print(f'[邮件通知] 端口 {p} 连接失败 ({type(err).__name__})，尝试端口 {fallback}...')
+
+    # 两个端口都失败
+    p, err = last_error
+    print(f'[邮件通知] 连接被断开: {type(err).__name__}: {err}')
+    print('  💡 该错误在 QQ 邮箱上通常表示以下之一：')
+    print('     1. 授权码不正确或已失效（请到邮箱设置重新生成，非登录密码）')
+    print('     2. 未开启 SMTP 服务（QQ 邮箱：设置 → 账户 → 开启 POP3/SMTP 服务）')
+    print('     3. 出口 IP 被风控（GitHub Actions 等云厂商 IP 段常被限制）')
+    print('     若本地运行正常、仅 Actions 失败，则基本可判定为第 3 条')
+    return False
 
 
 def send_serverchan_notification(results: List[Dict[str, Any]], execution_time: Optional[str] = None) -> bool:
